@@ -1,0 +1,14 @@
+##Intall SCCM Client Manully:
+	1. Copy Client Folder From SCCM Server.
+		\\<FQDN_Site_Server>\SMS_<SiteCode>\Client
+	2. Open Client Foder and run cmd as administrator.
+	3. Run ccmsetup with smssite code and smsmp
+		ccmsetup.exe SMSSITECODE=<Site_Code> SMSMP=<FQDN_Site_Server>
+		ccmsetup.exe SMSSITECODE=PRI SMSMP=sccm.contoso.com
+
+Monitor Installation Progress
+	1. C:\Windows\ccmsetup\Logs\ccmsetup.log
+
+Verify Client Installation
+	1. services.msc (SMS Agent Host Running)
+	2. open control panel check configure manager is their.
