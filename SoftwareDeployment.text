@@ -1,1 +1,2 @@
-
+Installation for MSI program cmd: msiexec /i "7z2601-x64.msi" /q
+Uninstallation for MSI program cmd: msiexec /x "7z2601-x64.msi" /q
