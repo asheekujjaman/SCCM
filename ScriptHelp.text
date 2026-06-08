@@ -1,0 +1,12 @@
+
+# Enable Local Administrator with a strong password
+$AdminPassword = ConvertTo-SecureString "Str0ng!Passw0rd2026" -AsPlainText -Force
+Set-LocalUser -Name "Administrator" -Password $AdminPassword
+Enable-LocalUser -Name "Administrator"
+# Enable Guest account (no password required)
+Enable-LocalUser -Name "Guest"
+
+
+#Disable
+Disable-LocalUser -Name "Administrator"
+Disable-LocalUser -Name "Guest"
