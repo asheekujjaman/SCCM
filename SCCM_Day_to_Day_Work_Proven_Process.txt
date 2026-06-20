@@ -1,0 +1,1898 @@
+SCCM / MECM DAY-TO-DAY WORK PROCESS IN A LARGE ORGANIZATION
+Real Proven Operational Process - Organized Text Documentation
+Prepared for: SCCM / MECM Operations, Endpoint Management, Patch Management, Application Deployment
+
+============================================================
+DOCUMENT PURPOSE
+============================================================
+
+This document explains the real day-to-day work process of an SCCM / MECM administrator in a large organization.
+
+It is written like an operational SOP. Use it for:
+  - Daily SCCM health check
+  - Client health monitoring
+  - Application deployment operations
+  - Software Center support
+  - Windows update / patch management
+  - SUP / WSUS monitoring
+  - Distribution Point and content monitoring
+  - Boundary and boundary group management
+  - OSD / PXE support
+  - Inventory and reporting
+  - Ticket handling
+  - Change management
+  - Weekly and monthly SCCM operations
+
+Core principle:
+  SCCM operation is not only "deploy software".
+  SCCM daily work means keeping the full endpoint management chain healthy:
+
+    Client health
+      -> Policy
+        -> Detection / Evaluation
+          -> Content
+            -> Download
+              -> Install
+                -> Compliance reporting
+
+
+============================================================
+TABLE OF CONTENTS
+============================================================
+
+01. Real SCCM Operations Mindset
+02. Daily Start-of-Day Process
+03. Daily Site and Component Health Process
+04. Daily Client Health Process
+05. Daily Ticket Triage Process
+06. Software Center Issue Work Process
+07. Application Deployment Work Process
+08. Application Failure Troubleshooting Process
+09. Application Packaging and Testing Process
+10. Windows Update / Patch Management Daily Process
+11. Monthly Patch Cycle Process
+12. SUP / WSUS Operational Process
+13. ADR Operational Process
+14. Content Distribution and DP Work Process
+15. Boundary and Boundary Group Work Process
+16. OSD / PXE Daily Support Process
+17. Inventory and Asset Data Work Process
+18. Discovery and Collection Management Process
+19. Reporting and Compliance Work Process
+20. RBAC / Admin Access Work Process
+21. Remote Control Support Process
+22. Backup and Recovery Check Process
+23. SCCM Upgrade / Updates and Servicing Work Process
+24. Incident Handling Process
+25. Change Management Process
+26. End-of-Day Handover Process
+27. Weekly SCCM Work Process
+28. Monthly SCCM Work Process
+29. Common Daily Logs by Task
+30. Daily Checklist Template
+31. Patch Day Checklist Template
+32. Application Deployment Checklist Template
+33. Ticket Note Template
+34. Escalation Matrix
+35. Official Reference Links
+
+
+============================================================
+01. REAL SCCM OPERATIONS MINDSET
+============================================================
+
+In a large organization, SCCM work follows a controlled operational method.
+
+A good SCCM admin does not immediately reinstall the client or recreate deployments.
+The proven process is:
+
+  1. Identify affected scope.
+       One device?
+       One subnet?
+       One branch?
+       One collection?
+       Entire organization?
+
+  2. Identify affected function.
+       Client?
+       Policy?
+       Application?
+       Update?
+       Content?
+       DP?
+       SUP?
+       MP?
+       OSD?
+       Reporting?
+
+  3. Check console status.
+       Deployment status
+       Client status
+       Component status
+       Distribution status
+
+  4. Check correct client/server logs.
+
+  5. Fix root cause, not only symptom.
+
+  6. Validate with test client.
+
+  7. Document ticket or change record.
+
+  8. Monitor after fix.
+
+Large organization rule:
+  Never change production deployment, boundary, DP, SUP, or client settings without understanding impact.
+
+
+============================================================
+02. DAILY START-OF-DAY PROCESS
+============================================================
+
+Purpose:
+  Start the day by checking if SCCM environment is healthy before working on tickets or new deployments.
+
+Estimated time:
+  15-30 minutes daily.
+
+Step-by-step process:
+
+  Step 1: Open SCCM console.
+
+  Step 2: Go to:
+      Monitoring > System Status > Site Status
+
+  Step 3: Check for:
+      Critical
+      Warning
+      Component error
+      Site system role error
+
+  Step 4: Go to:
+      Monitoring > System Status > Component Status
+
+  Step 5: Check important components:
+      SMS_EXECUTIVE
+      SMS_SITE_COMPONENT_MANAGER
+      SMS_DISTRIBUTION_MANAGER
+      SMS_PACKAGE_TRANSFER_MANAGER
+      SMS_STATE_SYSTEM
+      SMS_WSUS_SYNC_MANAGER
+      SMS_WSUS_CONFIGURATION_MANAGER
+      SMS_MP_CONTROL_MANAGER
+      SMS_POLICY_PROVIDER
+      SMS_INVENTORY_DATA_LOADER
+
+  Step 6: Go to:
+      Monitoring > Distribution Status > Content Status
+
+  Step 7: Check:
+      Failed content
+      In Progress content older than expected
+      DP with failed packages
+
+  Step 8: Go to:
+      Monitoring > Deployments
+
+  Step 9: Check:
+      Application deployments with high failure count
+      Update deployments with high unknown count
+      Required deployments stuck in progress
+
+  Step 10: Go to:
+      Monitoring > Client Status
+
+  Step 11: Check:
+      Client health dashboard
+      Inactive clients
+      Client check failed
+      Client version mismatch
+
+Output of this process:
+  - List of high priority SCCM issues for the day.
+  - Any major outage identified early.
+  - Ticket/change priority decided.
+
+
+============================================================
+03. DAILY SITE AND COMPONENT HEALTH PROCESS
+============================================================
+
+Purpose:
+  Confirm SCCM core infrastructure is healthy.
+
+Frequency:
+  Daily.
+
+Console path:
+  Monitoring > System Status
+
+Main checks:
+
+  1. Site Status
+       Check site server, MP, DP, SUP, reporting point.
+
+  2. Component Status
+       Check warnings/errors.
+
+  3. Component messages
+       Open component message details.
+       Identify repeated errors.
+
+  4. Server resources
+       Check disk space, CPU, memory.
+       Especially:
+         SCCM site server
+         SQL server
+         SUP/WSUS server
+         Distribution Points
+         Management Points
+
+Important logs:
+
+  Site server:
+    smsexec.log
+    sitecomp.log
+    hman.log
+    smsdbmon.log
+    statmgr.log
+    statesys.log
+
+  MP:
+    MPControl.log
+    MP_Policy.log
+    MP_Status.log
+
+  SUP:
+    WSUSCtrl.log
+    WCM.log
+    wsyncmgr.log
+
+  DP:
+    distmgr.log
+    PkgXferMgr.log
+    SMSdpmon.log
+    smsdpprov.log
+
+Proven work process:
+
+  If component is Warning:
+    1. Read latest component message.
+    2. Open matching log.
+    3. Confirm if issue is temporary or repeating.
+    4. If temporary and already recovered, monitor.
+    5. If repeating, create incident ticket.
+
+  If component is Critical:
+    1. Check if service is running.
+    2. Check latest log error.
+    3. Check disk space.
+    4. Check SQL/IIS/WSUS depending on role.
+    5. Escalate if production deployment is impacted.
+
+Success criteria:
+  - Site status is healthy or known issues are documented.
+  - No unexplained Critical component remains open.
+
+
+============================================================
+04. DAILY CLIENT HEALTH PROCESS
+============================================================
+
+Purpose:
+  Keep client devices healthy so deployments, updates, inventory, and reporting work.
+
+Frequency:
+  Daily for monitoring.
+  Weekly for cleanup/remediation campaign.
+
+Console paths:
+  Assets and Compliance > Devices
+  Monitoring > Client Status
+  Monitoring > Client Health Dashboard
+
+Daily checks:
+
+  1. Client = No
+       Devices discovered but SCCM client missing.
+
+  2. Client Activity = Inactive
+       Client installed but not communicating.
+
+  3. Client Check Result = Failed
+       Client health check failed.
+
+  4. Old Policy Request
+       Device has not requested policy recently.
+
+  5. Old Hardware Inventory
+       Device not sending inventory.
+
+  6. Old Software Update Scan
+       Device not scanning updates.
+
+Proven work process:
+
+  For Client = No:
+    1. Confirm device is online.
+    2. Check DNS.
+    3. Check admin$ share.
+    4. Push client from console or install manually.
+    5. Check ccm.log on site server.
+    6. Check ccmsetup.log on client.
+
+  For Client inactive:
+    1. Ping device.
+    2. Check SMS Agent Host service.
+    3. Check CcmExec.log.
+    4. Check LocationServices.log.
+    5. Check CcmMessaging.log.
+    6. Restart SMS Agent Host.
+    7. If not fixed, repair or reinstall client.
+
+  For Client Check Failed:
+    1. Open CcmEval.log.
+    2. Identify failed check.
+    3. Let automatic remediation run if enabled.
+    4. Repair WMI, service, or client based on issue.
+    5. Rerun client evaluation.
+
+Useful command:
+  Machine Policy Retrieval:
+    Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000021}"
+
+Success criteria:
+  - Client is active.
+  - Policy request time updates.
+  - Client check result becomes Passed.
+  - Device can receive deployments.
+
+
+============================================================
+05. DAILY TICKET TRIAGE PROCESS
+============================================================
+
+Purpose:
+  Handle SCCM user/support tickets in a controlled way.
+
+Common daily tickets:
+  - App not showing
+  - App install failed
+  - Software Center empty
+  - Windows update not installing
+  - Device inactive
+  - Imaging failed
+  - PXE not working
+  - Download stuck
+  - Compliance report wrong
+
+Proven triage questions:
+
+  1. Who is affected?
+       Single user/device or multiple?
+
+  2. What is affected?
+       Application, update, client, Software Center, OSD, report?
+
+  3. When did it start?
+       After change? After patch? After image? New subnet?
+
+  4. Device information:
+       Hostname
+       IP address
+       User
+       OS version
+       Site code
+       Collection
+
+  5. Deployment information:
+       Application/update name
+       Deployment collection
+       Available/required
+       Error code
+       Screenshot
+
+  6. Business impact:
+       VIP user?
+       Production branch?
+       Critical app?
+       Security patch deadline?
+
+Ticket priority guideline:
+
+  P1:
+    SCCM infrastructure outage.
+    Many users cannot install apps/updates.
+    Patch deployment blocked organization-wide.
+
+  P2:
+    Branch/site affected.
+    Many devices affected.
+    Critical application failing.
+
+  P3:
+    Single device or small group affected.
+
+  P4:
+    Request, report, minor cleanup, documentation.
+
+Ticket closure rule:
+  Never close ticket with only "fixed".
+  Always add:
+    Root cause
+    Logs checked
+    Action taken
+    Verification result
+
+
+============================================================
+06. SOFTWARE CENTER ISSUE WORK PROCESS
+============================================================
+
+Purpose:
+  Resolve Software Center visibility and installation issues.
+
+Common symptoms:
+  - Software Center empty
+  - App not showing
+  - Update not showing
+  - Install button remains after install
+  - Software Center not opening
+
+Proven process:
+
+  Step 1: Confirm SCCM client health.
+      Check:
+        Client = Yes
+        Client Activity = Active
+        Site Code correct
+        SMS Agent Host running
+
+  Step 2: Confirm deployment targeting.
+      Device deployment:
+        Device must be in target collection.
+
+      User deployment:
+        User must be in target user collection and logged in.
+
+  Step 3: Confirm deployment setting.
+      Available time must be reached.
+      Deployment must be enabled.
+      User Experience must allow display if user should see it.
+
+  Step 4: Trigger policy.
+      Run Machine Policy Retrieval and Evaluation Cycle.
+
+  Step 5: Check logs:
+      PolicyAgent.log
+      SCClient*.log
+      SoftwareCenterSystemTasks.log
+      AppIntentEval.log
+      UpdatesDeployment.log
+
+  Step 6: Restart Software Center.
+      Close Software Center.
+      Restart SMS Agent Host if needed.
+
+  Step 7: Validate.
+      Application appears under Applications.
+      Updates appear under Updates.
+
+Common root cause and fix:
+
+  Problem:
+    App/update deployed but not showing.
+
+  Fix:
+    Check collection membership, policy, schedule, User Experience setting.
+
+  Problem:
+    App installed but still shows Install.
+
+  Fix:
+    Fix detection method and check AppDiscovery.log.
+
+
+============================================================
+07. APPLICATION DEPLOYMENT WORK PROCESS
+============================================================
+
+Purpose:
+  Deploy applications safely in a large organization.
+
+Standard deployment flow:
+
+  1. Request received.
+  2. Requirement collected.
+  3. Source files verified.
+  4. Silent install command identified.
+  5. Detection method created.
+  6. Uninstall command created.
+  7. Test collection created.
+  8. Application created in SCCM.
+  9. Content distributed to DP.
+  10. Test deployment to IT/pilot group.
+  11. Validate install/uninstall/detection.
+  12. Create change request for production deployment.
+  13. Deploy in phases.
+  14. Monitor success/failure.
+  15. Close change with report.
+
+Application deployment phases:
+
+  Phase 1: Lab test
+    Small SCCM admin/test devices.
+
+  Phase 2: IT pilot
+    IT department or endpoint team.
+
+  Phase 3: Business pilot
+    Small group from target business unit.
+
+  Phase 4: Production rollout
+    Larger collection, often phased by region/department.
+
+  Phase 5: Compliance monitoring
+    Check success/failure/unknown.
+
+Proven deployment rules:
+
+  - Always test install command manually first.
+  - Always test uninstall command.
+  - Always create accurate detection method.
+  - Always distribute content before deployment.
+  - Always use pilot collection before production.
+  - Always define rollback plan.
+  - Avoid deploying to All Systems directly.
+  - Use maintenance window for disruptive applications.
+  - Communicate user-impacting deployments.
+
+
+============================================================
+08. APPLICATION FAILURE TROUBLESHOOTING PROCESS
+============================================================
+
+Purpose:
+  Resolve failed application installations.
+
+Proven troubleshooting order:
+
+  Step 1: Check deployment status in console.
+      Monitoring > Deployments
+
+  Step 2: Identify status:
+      Failed
+      In Progress
+      Unknown
+      Requirements Not Met
+      Waiting for Content
+      Installed
+
+  Step 3: On failed client, check:
+      AppIntentEval.log
+      AppDiscovery.log
+      AppEnforce.log
+      CAS.log
+      ContentTransferManager.log
+      DataTransferService.log
+
+  Step 4: If app is not applicable:
+      Check AppIntentEval.log.
+      Fix requirement rules.
+
+  Step 5: If content is not downloaded:
+      Check CAS.log.
+      Check boundary group.
+      Check DP content status.
+
+  Step 6: If install command fails:
+      Check AppEnforce.log.
+      Copy exact command from log.
+      Test manually.
+
+  Step 7: If app installed but not detected:
+      Check AppDiscovery.log.
+      Fix detection method.
+
+  Step 8: Update application content if source changed.
+
+  Step 9: Redistribute content to DP.
+
+  Step 10: Trigger Application Deployment Evaluation Cycle.
+
+Success criteria:
+  - AppEnforce.log returns 0 or valid success code.
+  - AppDiscovery.log detects app successfully.
+  - Console status changes to Success/Installed.
+
+
+============================================================
+09. APPLICATION PACKAGING AND TESTING PROCESS
+============================================================
+
+Purpose:
+  Create reliable SCCM applications.
+
+Packaging input checklist:
+
+  - Installer source file
+  - Version
+  - Vendor
+  - License information
+  - Silent install command
+  - Silent uninstall command
+  - Restart requirement
+  - Dependency/prerequisite
+  - Architecture: x86/x64
+  - Install behavior: user/system
+  - Detection method
+  - Business owner
+  - Pilot users
+  - Rollback plan
+
+Testing process:
+
+  Step 1: Test silent install manually.
+      Example MSI:
+        msiexec /i app.msi /qn /norestart
+
+  Step 2: Test silent uninstall manually.
+      Example MSI:
+        msiexec /x {PRODUCT-CODE} /qn /norestart
+
+  Step 3: Test install as SYSTEM.
+      Use PsExec:
+        psexec -s -i cmd.exe
+
+  Step 4: Create SCCM application.
+
+  Step 5: Add detection method:
+      MSI product code
+      File exists
+      Registry key
+      Script detection
+
+  Step 6: Distribute content to test DP.
+
+  Step 7: Deploy to test collection.
+
+  Step 8: Validate:
+      Install
+      Detection
+      Uninstall
+      Reinstall
+      Upgrade
+      Reboot behavior
+
+  Step 9: Document:
+      Command line
+      Detection method
+      Known issues
+      Rollback method
+
+Production rule:
+  No application should go to production without detection validation.
+
+
+============================================================
+10. WINDOWS UPDATE / PATCH MANAGEMENT DAILY PROCESS
+============================================================
+
+Purpose:
+  Monitor and maintain Windows update compliance.
+
+Daily patch work:
+
+  1. Check current update deployments.
+      Monitoring > Deployments
+
+  2. Review compliance:
+      Compliant
+      Required
+      In Progress
+      Error
+      Unknown
+
+  3. Focus first on:
+      Unknown
+      Error
+      Required after deadline
+      Pending reboot
+
+  4. For Unknown clients:
+      Check WUAHandler.log and ScanAgent.log.
+
+  5. For download failures:
+      Check CAS.log, ContentTransferManager.log, DataTransferService.log.
+
+  6. For install failures:
+      Check UpdatesHandler.log, WUAHandler.log, CBS.log.
+
+  7. For pending reboot:
+      Check RebootCoordinator.log.
+
+  8. For maintenance window blocking:
+      Check ServiceWindowManager.log.
+
+  9. Export compliance report for management if needed.
+
+Proven daily patch priority:
+
+  Priority 1:
+    Security updates with approaching deadline.
+
+  Priority 2:
+    Devices in error after deadline.
+
+  Priority 3:
+    Unknown devices.
+
+  Priority 4:
+    Pending reboot.
+
+  Priority 5:
+    General compliance improvement.
+
+
+============================================================
+11. MONTHLY PATCH CYCLE PROCESS
+============================================================
+
+Purpose:
+  Manage monthly Microsoft patching safely.
+
+Recommended phases:
+
+  Phase 0: Preparation
+    - Confirm SUP/WSUS health.
+    - Confirm ADR rules.
+    - Confirm maintenance windows.
+    - Confirm DP disk space.
+    - Confirm pilot collections.
+    - Confirm client health baseline.
+
+  Phase 1: Sync and Review
+    - Synchronize software updates.
+    - Review updates.
+    - Check superseded/expired updates.
+    - Confirm correct products/classifications.
+
+  Phase 2: Pilot Deployment
+    - Deploy to IT pilot group.
+    - Deadline usually short.
+    - Monitor install and reboot.
+    - Check business critical app compatibility.
+
+  Phase 3: Early Production
+    - Deploy to small production group.
+    - Include different hardware models and departments.
+    - Monitor failures.
+
+  Phase 4: Broad Production
+    - Deploy to main workstation/server groups.
+    - Follow maintenance windows.
+    - Monitor compliance.
+
+  Phase 5: Remediation
+    - Fix Unknown clients.
+    - Fix failed updates.
+    - Reboot pending devices.
+    - Repair WUA/clients if needed.
+
+  Phase 6: Closure
+    - Export compliance report.
+    - Document failure rate.
+    - Document exceptions.
+    - Close change record.
+
+Patch deployment proven rule:
+  Never deploy monthly updates directly to all production without pilot validation.
+
+
+============================================================
+12. SUP / WSUS OPERATIONAL PROCESS
+============================================================
+
+Purpose:
+  Keep software update sync and scan healthy.
+
+Daily/weekly checks:
+
+  1. Check WSUSCtrl.log.
+      Confirm WSUS health.
+
+  2. Check WCM.log.
+      Confirm SUP configuration.
+
+  3. Check wsyncmgr.log.
+      Confirm sync completed.
+
+  4. Check PatchDownloader.log when updates fail to download.
+
+  5. Check selected products/classifications.
+
+  6. Check WSUS cleanup and database maintenance.
+
+  7. Check WSUS IIS health.
+
+Proven process for sync failure:
+
+  Step 1: Check internet/proxy.
+  Step 2: Check WSUS service.
+  Step 3: Check IIS app pool.
+  Step 4: Check WSUSCtrl.log.
+  Step 5: Check WCM.log.
+  Step 6: Check wsyncmgr.log.
+  Step 7: Run manual synchronization.
+  Step 8: If repeated failure, perform WSUS maintenance/cleanup.
+
+Success criteria:
+  - wsyncmgr.log shows synchronization completed.
+  - New updates appear in All Software Updates.
+  - Clients can scan successfully.
+
+
+============================================================
+13. ADR OPERATIONAL PROCESS
+============================================================
+
+Purpose:
+  Automate monthly software update group creation, download, and deployment.
+
+ADR daily/monthly check:
+
+  1. Confirm ADR is enabled.
+  2. Confirm schedule is correct.
+  3. Preview ADR results.
+  4. Confirm update criteria:
+       Product
+       Classification
+       Supersedence
+       Date released/revised
+       Required count
+  5. Confirm deployment package path.
+  6. Confirm DP distribution.
+  7. Confirm deployment created.
+  8. Confirm pilot/production collection target.
+  9. Monitor ruleengine.log.
+  10. Monitor PatchDownloader.log.
+
+Proven process for ADR failure:
+
+  Step 1: Check ruleengine.log.
+  Step 2: Preview ADR results.
+  Step 3: If no updates returned, fix search criteria.
+  Step 4: If download failed, check PatchDownloader.log.
+  Step 5: Check source path permissions.
+  Step 6: Run ADR manually.
+  Step 7: Confirm Software Update Group created.
+
+Success criteria:
+  - ADR creates Software Update Group.
+  - Updates download.
+  - Content distributed.
+  - Deployment appears under Deployments.
+
+
+============================================================
+14. CONTENT DISTRIBUTION AND DP WORK PROCESS
+============================================================
+
+Purpose:
+  Make sure all application/update/OSD content is available to clients.
+
+Daily process:
+
+  1. Go to:
+       Monitoring > Distribution Status > Content Status
+
+  2. Filter:
+       Failed
+       In Progress
+       Unknown
+
+  3. Check affected content:
+       Application
+       Package
+       Software update package
+       Boot image
+       OS image
+       Driver package
+
+  4. Check affected DP.
+
+  5. Check logs:
+       distmgr.log
+       PkgXferMgr.log
+       smsdpprov.log
+       SMSdpmon.log
+
+  6. Check DP:
+       Disk space
+       IIS
+       SMS_DP$ share
+       Content library
+       Network connectivity
+
+  7. Redistribute content if needed.
+
+  8. Validate content after redistribution.
+
+Proven process for client download issue:
+
+  Step 1: Confirm content status is Success on DP.
+  Step 2: Check boundary group.
+  Step 3: Check LocationServices.log.
+  Step 4: Check CAS.log.
+  Step 5: Check ContentTransferManager.log.
+  Step 6: Check DataTransferService.log.
+  Step 7: Clear or increase client cache if needed.
+
+Success criteria:
+  - Content status Success.
+  - Client finds DP.
+  - Download completes.
+  - Installation starts.
+
+
+============================================================
+15. BOUNDARY AND BOUNDARY GROUP WORK PROCESS
+============================================================
+
+Purpose:
+  Ensure clients find the correct MP, DP, and SUP.
+
+When to check boundary:
+  - New office opened
+  - New VLAN/subnet created
+  - VPN IP range changed
+  - Clients download from wrong DP
+  - Clients cannot find content
+  - Clients cannot scan updates
+  - Branch users report slow downloads
+
+Proven process:
+
+  Step 1: Get client IP address:
+      ipconfig /all
+
+  Step 2: Check SCCM boundaries:
+      Administration > Hierarchy Configuration > Boundaries
+
+  Step 3: Confirm IP range/subnet exists.
+
+  Step 4: Confirm boundary is member of correct boundary group.
+
+  Step 5: Open boundary group References tab.
+
+  Step 6: Confirm assigned:
+      Site assignment
+      Distribution Point
+      Management Point if used
+      Software Update Point if required
+
+  Step 7: Check fallback behavior.
+
+  Step 8: Run Machine Policy Retrieval on client.
+
+  Step 9: Check:
+      LocationServices.log
+      ClientLocation.log
+      CAS.log
+
+Best practice:
+  In large organizations, IP range boundaries are often easier to control accurately than AD site/subnet assumptions.
+
+Success criteria:
+  - Client resolves correct DP/MP/SUP.
+  - Download starts from expected DP.
+  - Update scan uses correct SUP.
+
+
+============================================================
+16. OSD / PXE DAILY SUPPORT PROCESS
+============================================================
+
+Purpose:
+  Support operating system deployment, reimaging, and new device build.
+
+Common daily OSD work:
+  - PXE failure
+  - No task sequence available
+  - Driver issue
+  - Domain join failure
+  - Application install failure in task sequence
+  - Boot image update
+  - Driver package update
+  - OS image servicing
+
+Proven PXE process:
+
+  Step 1: Confirm DP has PXE enabled.
+
+  Step 2: Confirm boot image is distributed to PXE DP.
+
+  Step 3: Confirm deployment is available to PXE and boot media.
+
+  Step 4: Confirm device is in correct collection.
+
+  Step 5: Check if duplicate/stale device record exists.
+
+  Step 6: Check smspxe.log during boot.
+
+  Step 7: If PXE request does not reach DP:
+      Check IP helper / network routing / DHCP.
+
+Proven task sequence failure process:
+
+  Step 1: Open smsts.log.
+
+  Step 2: Search:
+      failed
+      error
+      return code
+
+  Step 3: Identify failed step.
+
+  Step 4: If content issue:
+      Check boundary and DP content.
+
+  Step 5: If app issue:
+      Check AppEnforce.log.
+
+  Step 6: If client install issue:
+      Check ccmsetup.log.
+
+  Step 7: If domain join issue:
+      Check C:\Windows\Debug\NetSetup.log.
+
+Success criteria:
+  - PXE receives deployment.
+  - Task sequence completes.
+  - Device joins domain.
+  - SCCM client active after imaging.
+
+
+============================================================
+17. INVENTORY AND ASSET DATA WORK PROCESS
+============================================================
+
+Purpose:
+  Ensure hardware/software inventory data is accurate for reporting, compliance, and asset management.
+
+Daily/weekly process:
+
+  1. Check devices with old hardware inventory date.
+  2. Check devices with old software inventory date.
+  3. Run inventory cycle on sample affected client.
+  4. Check InventoryAgent.log.
+  5. Check server-side processing:
+       dataldr.log
+       sinvproc.log
+  6. Validate data in Resource Explorer.
+  7. Validate report output.
+
+Proven process for missing inventory:
+
+  Step 1: Confirm inventory is enabled in client settings.
+  Step 2: Run Hardware Inventory Cycle.
+  Step 3: Check InventoryAgent.log.
+  Step 4: Check WMI on client.
+  Step 5: Check dataldr.log.
+  Step 6: If software inventory, check sinvproc.log.
+  Step 7: Wait for processing/reporting delay.
+
+Success criteria:
+  - InventoryAgent.log shows successful report.
+  - Server processes inventory.
+  - Console/report data updates.
+
+
+============================================================
+18. DISCOVERY AND COLLECTION MANAGEMENT PROCESS
+============================================================
+
+Purpose:
+  Keep SCCM device/user data and collections accurate.
+
+Daily/weekly work:
+  - Check AD discovery.
+  - Update collections.
+  - Create deployment collections.
+  - Remove stale devices.
+  - Fix duplicate records.
+  - Validate AD group-based collections.
+
+Proven process for new deployment collection:
+
+  Step 1: Define target:
+      Device-based or user-based.
+
+  Step 2: Choose collection type:
+      Direct membership
+      Query-based
+      AD group-based
+
+  Step 3: Use limiting collection carefully.
+
+  Step 4: Validate membership.
+
+  Step 5: Update membership.
+
+  Step 6: Deploy to pilot first.
+
+Proven process for AD discovery issue:
+
+  Step 1: Check discovery method.
+  Step 2: Confirm LDAP path.
+  Step 3: Confirm discovery account permission.
+  Step 4: Run full discovery.
+  Step 5: Check:
+      adsysdis.log
+      adusrdis.log
+      adsgdis.log
+      ddm.log
+
+Success criteria:
+  - Correct users/devices appear.
+  - Collection membership is accurate.
+  - Deployment targets correct devices.
+
+
+============================================================
+19. REPORTING AND COMPLIANCE WORK PROCESS
+============================================================
+
+Purpose:
+  Provide accurate data to IT, management, audit, and security teams.
+
+Daily/weekly reports:
+  - Patch compliance
+  - Application deployment status
+  - Client health
+  - Inactive clients
+  - Inventory
+  - Software installation count
+  - OSD success/failure
+  - Endpoint protection status
+
+Proven reporting process:
+
+  Step 1: Confirm data source is updated.
+      For patch report:
+        Check update deployment status and state messages.
+
+      For inventory report:
+        Check latest hardware/software inventory.
+
+  Step 2: Run report from SCCM console or SSRS.
+
+  Step 3: Validate report with sample devices.
+
+  Step 4: Export report to Excel/PDF if required.
+
+  Step 5: Add explanation:
+      Total targeted
+      Success/compliant
+      Failed
+      Unknown
+      Pending reboot
+      Exceptions
+
+  Step 6: Send to stakeholder.
+
+Proven process for report issue:
+
+  Step 1: Check srsrp.log.
+  Step 2: Check SCCMReporting.log.
+  Step 3: Check RBAC/security scope.
+  Step 4: Check if data is actually received.
+  Step 5: Check statesys.log or inventory processing logs.
+
+Success criteria:
+  - Report opens.
+  - Data matches deployment/inventory state.
+  - Management receives clear compliance summary.
+
+
+============================================================
+20. RBAC / ADMIN ACCESS WORK PROCESS
+============================================================
+
+Purpose:
+  Manage SCCM console permissions safely.
+
+Common requests:
+  - New SCCM console access
+  - Helpdesk app deployment visibility
+  - Regional admin access
+  - Report-only access
+  - Remove admin access
+
+Proven process:
+
+  Step 1: Get approval from manager/system owner.
+
+  Step 2: Identify required access:
+      Full Administrator
+      Application Administrator
+      Operating System Deployment Manager
+      Remote Tools Operator
+      Read-only Analyst
+      Custom role
+
+  Step 3: Assign security role.
+
+  Step 4: Assign security scope.
+
+  Step 5: Assign collection limitation.
+
+  Step 6: Ask user to test console.
+
+  Step 7: Document access granted.
+
+  Step 8: Review access monthly/quarterly.
+
+Logs:
+  SmsAdminUI.log
+  SMSProv.log
+
+Success criteria:
+  - Admin can perform approved tasks only.
+  - No over-permission granted.
+
+
+============================================================
+21. REMOTE CONTROL SUPPORT PROCESS
+============================================================
+
+Purpose:
+  Support users remotely using SCCM Remote Control.
+
+Proven process:
+
+  Step 1: Confirm Remote Tools enabled in Client Settings.
+
+  Step 2: Confirm admin/user has permission.
+
+  Step 3: Confirm target client is active.
+
+  Step 4: Connect using Remote Control Viewer.
+
+  Step 5: If failed:
+      Check firewall.
+      Check CmRcViewer.log.
+      Check CmRcService.log.
+      Check client health.
+
+  Step 6: Document support action in ticket.
+
+Success criteria:
+  - Remote control session connects.
+  - User issue is resolved or escalated.
+
+
+============================================================
+22. BACKUP AND RECOVERY CHECK PROCESS
+============================================================
+
+Purpose:
+  Ensure SCCM site can be recovered if disaster happens.
+
+Daily/weekly process:
+
+  1. Confirm site backup completed.
+  2. Check backup folder timestamp.
+  3. Check backup size.
+  4. Confirm SQL backup completed.
+  5. Confirm backup copied to safe location.
+  6. Check smsbkup.log.
+  7. Check smssqlbkup.log if SQL is remote.
+  8. Check VSS writers if backup failed.
+
+Proven backup failure process:
+
+  Step 1: Check smsbkup.log.
+  Step 2: Confirm backup path available.
+  Step 3: Confirm site server computer account has write permission.
+  Step 4: Check disk space.
+  Step 5: Check SQL backup.
+  Step 6: Run backup again.
+
+Success criteria:
+  - Backup completes.
+  - Backup is restorable.
+  - Backup location is protected.
+
+
+============================================================
+23. SCCM UPGRADE / UPDATES AND SERVICING WORK PROCESS
+============================================================
+
+Purpose:
+  Keep SCCM current branch version supported and healthy.
+
+Proven process:
+
+  Step 1: Review new update in:
+      Administration > Updates and Servicing
+
+  Step 2: Run prerequisite check.
+
+  Step 3: Fix prerequisite warnings/errors.
+
+  Step 4: Review Microsoft release notes.
+
+  Step 5: Take backup / confirm latest backup.
+
+  Step 6: Notify stakeholders.
+
+  Step 7: Install update during approved change window.
+
+  Step 8: Monitor:
+      Updates and Servicing node
+      CMUpdate.log
+      hman.log
+      sitecomp.log
+
+  Step 9: Update console.
+
+  Step 10: Update clients gradually.
+
+  Step 11: Monitor client upgrade status.
+
+Success criteria:
+  - Site update installs successfully.
+  - Console opens with new version.
+  - Clients upgrade without high failure rate.
+  - Components remain healthy.
+
+
+============================================================
+24. INCIDENT HANDLING PROCESS
+============================================================
+
+Purpose:
+  Handle SCCM production incidents quickly and safely.
+
+Examples:
+  - All clients cannot get policy
+  - Software Center empty for many users
+  - SUP sync broken during patch cycle
+  - DP outage affects branch
+  - Wrong application deployed broadly
+  - Patch deployment causing issue
+
+Proven process:
+
+  Step 1: Confirm incident scope.
+      Single device?
+      Multiple devices?
+      One site?
+      Organization-wide?
+
+  Step 2: Stop further impact.
+      Pause deployment if needed.
+      Disable ADR if needed.
+      Remove deployment only with approval.
+      Stop content distribution if wrong content.
+
+  Step 3: Identify failed SCCM layer:
+      Client
+      MP
+      DP
+      SUP
+      SQL
+      Policy
+      Content
+      Detection
+      Update scan
+
+  Step 4: Check logs and console status.
+
+  Step 5: Apply fix.
+
+  Step 6: Validate with sample clients.
+
+  Step 7: Monitor recovery.
+
+  Step 8: Send update to stakeholders.
+
+  Step 9: Write root cause analysis.
+
+Incident note format:
+  Issue:
+  Start time:
+  Impact:
+  Root cause:
+  Action taken:
+  Current status:
+  Next action:
+  Owner:
+
+
+============================================================
+25. CHANGE MANAGEMENT PROCESS
+============================================================
+
+Purpose:
+  Avoid uncontrolled SCCM production changes.
+
+Changes requiring approval:
+  - Production app deployment
+  - Required deployment to large collection
+  - Monthly patch deployment
+  - SUP/WSUS change
+  - Boundary group change
+  - DP change
+  - Client setting change
+  - SCCM upgrade
+  - OSD task sequence change
+  - Script/package with high impact
+
+Proven change process:
+
+  Step 1: Create change request.
+
+  Step 2: Add:
+      Purpose
+      Scope
+      Target collection
+      Risk
+      User impact
+      Implementation plan
+      Rollback plan
+      Validation plan
+      Communication plan
+
+  Step 3: Pilot test.
+
+  Step 4: Get approval.
+
+  Step 5: Implement in change window.
+
+  Step 6: Monitor.
+
+  Step 7: Attach evidence:
+      Deployment status
+      Compliance report
+      Screenshots
+      Logs if needed
+
+  Step 8: Close change.
+
+Rollback examples:
+  - Remove deployment.
+  - Deploy previous app version.
+  - Stop required deployment.
+  - Change deadline.
+  - Roll back client setting.
+  - Restore previous task sequence version if documented.
+
+
+============================================================
+26. END-OF-DAY HANDOVER PROCESS
+============================================================
+
+Purpose:
+  Ensure open SCCM work is not lost between shifts/days.
+
+End-of-day checklist:
+
+  1. List open incidents.
+  2. List failed production deployments.
+  3. List pending change activities.
+  4. List high priority tickets.
+  5. List patch compliance status if in patch week.
+  6. List content distribution failures.
+  7. List DP/SUP/MP health issues.
+  8. Mention any actions already taken.
+  9. Mention next required action.
+  10. Share logs/screenshots if needed.
+
+Handover format:
+
+  Date:
+  Shift/Owner:
+  Open Issues:
+  Completed Work:
+  Pending Work:
+  Risks:
+  Next Actions:
+  Escalations:
+  Notes:
+
+
+============================================================
+27. WEEKLY SCCM WORK PROCESS
+============================================================
+
+Weekly operations:
+
+  1. Review inactive clients older than 7/14/30 days.
+  2. Review Client = No devices.
+  3. Review failed client health checks.
+  4. Review application deployment failures.
+  5. Review update compliance.
+  6. Review Unknown update clients.
+  7. Review DP content failures.
+  8. Review DP disk space.
+  9. Review SCCM server disk space.
+  10. Review WSUS cleanup status.
+  11. Review stale and duplicate devices.
+  12. Review collections with slow queries.
+  13. Review failed OSD task sequences.
+  14. Review site backup status.
+  15. Review open SCCM tickets.
+
+Weekly output:
+  - Health summary.
+  - Remediation list.
+  - Risk list.
+  - Action plan for next week.
+
+
+============================================================
+28. MONTHLY SCCM WORK PROCESS
+============================================================
+
+Monthly operations:
+
+  1. Execute patch cycle.
+  2. Prepare patch compliance report.
+  3. Review and clean WSUS.
+  4. Update OS image if needed.
+  5. Update boot image if needed.
+  6. Update driver packages for new models.
+  7. Review client version upgrade status.
+  8. Review SCCM site maintenance tasks.
+  9. Review RBAC access.
+  10. Review boundary changes from network team.
+  11. Review DP capacity.
+  12. Review application catalog/package cleanup.
+  13. Review stale deployments.
+  14. Review SCCM backup restore readiness.
+  15. Review SCCM current branch support status.
+
+Monthly output:
+  - Patch compliance report.
+  - SCCM health report.
+  - Client health report.
+  - Risk and improvement list.
+  - Cleanup/remediation plan.
+
+
+============================================================
+29. COMMON DAILY LOGS BY TASK
+============================================================
+
+Client install:
+  ccmsetup.log
+  client.msi.log
+  ccm.log
+
+Client health:
+  CcmExec.log
+  CcmEval.log
+  ClientIDManagerStartup.log
+  LocationServices.log
+  CcmMessaging.log
+
+Policy:
+  PolicyAgent.log
+  PolicyEvaluator.log
+
+Software Center:
+  SCClient*.log
+  SoftwareCenterSystemTasks.log
+
+Application:
+  AppIntentEval.log
+  AppDiscovery.log
+  AppEnforce.log
+
+Content download:
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+Software updates:
+  UpdatesDeployment.log
+  UpdatesStore.log
+  UpdatesHandler.log
+  WUAHandler.log
+  ScanAgent.log
+  RebootCoordinator.log
+  ServiceWindowManager.log
+
+SUP / WSUS:
+  SUPSetup.log
+  WCM.log
+  WSUSCtrl.log
+  wsyncmgr.log
+  PatchDownloader.log
+  ruleengine.log
+
+Distribution Point:
+  distmgr.log
+  PkgXferMgr.log
+  smsdpprov.log
+  SMSdpmon.log
+
+OSD / PXE:
+  smsts.log
+  smspxe.log
+  TSAgent.log
+  Dism.log
+
+Inventory:
+  InventoryAgent.log
+  InventoryProvider.log
+  dataldr.log
+  sinvproc.log
+
+Discovery:
+  adsysdis.log
+  adusrdis.log
+  adsgdis.log
+  ddm.log
+
+Reporting:
+  srsrp.log
+  srsrpsetup.log
+  SCCMReporting.log
+
+Console/RBAC:
+  SmsAdminUI.log
+  SMSProv.log
+
+Backup:
+  smsbkup.log
+  smssqlbkup.log
+  Smswriter.log
+
+
+============================================================
+30. DAILY CHECKLIST TEMPLATE
+============================================================
+
+Date:
+SCCM Admin:
+Shift:
+
+[ ] Site Status checked
+[ ] Component Status checked
+[ ] MP health checked
+[ ] SUP/WSUS health checked
+[ ] DP/content status checked
+[ ] Failed deployments reviewed
+[ ] Client health reviewed
+[ ] Inactive clients reviewed
+[ ] Software update compliance checked
+[ ] Patch errors/unknown devices reviewed
+[ ] Application deployment failures checked
+[ ] Critical tickets reviewed
+[ ] Change activities reviewed
+[ ] Backup status checked
+[ ] End-of-day handover completed
+
+Notes:
+  -
+
+
+============================================================
+31. PATCH DAY CHECKLIST TEMPLATE
+============================================================
+
+Patch Month:
+Patch Owner:
+Change Number:
+
+Before Deployment:
+[ ] SUP sync completed
+[ ] ADR reviewed
+[ ] Update group created
+[ ] Updates downloaded
+[ ] Content distributed to DP
+[ ] Pilot collection confirmed
+[ ] Maintenance windows confirmed
+[ ] Rollback/exception plan ready
+[ ] Communication sent
+
+Pilot:
+[ ] Pilot deployed
+[ ] Pilot compliance checked
+[ ] Pilot failures reviewed
+[ ] Business critical apps tested
+[ ] Approval for production received
+
+Production:
+[ ] Production deployment enabled
+[ ] Compliance monitored
+[ ] Error devices reviewed
+[ ] Unknown devices reviewed
+[ ] Pending reboot devices tracked
+[ ] Management report prepared
+
+Closure:
+[ ] Compliance percentage documented
+[ ] Failed devices documented
+[ ] Exceptions documented
+[ ] Change closed
+
+
+============================================================
+32. APPLICATION DEPLOYMENT CHECKLIST TEMPLATE
+============================================================
+
+Application Name:
+Version:
+Vendor:
+Business Owner:
+Package Owner:
+Change Number:
+
+Packaging:
+[ ] Source files received
+[ ] Silent install command tested
+[ ] Silent uninstall command tested
+[ ] Detection method created
+[ ] Requirements configured
+[ ] Dependencies configured
+[ ] Restart behavior configured
+[ ] Content distributed
+
+Testing:
+[ ] Manual install tested
+[ ] SYSTEM install tested
+[ ] SCCM test deployment completed
+[ ] Detection verified
+[ ] Uninstall verified
+[ ] Reinstall verified
+[ ] Pilot deployment completed
+
+Production:
+[ ] Change approved
+[ ] Production collection verified
+[ ] Deployment schedule set
+[ ] User notification set
+[ ] Monitoring completed
+[ ] Failure devices reviewed
+[ ] Report sent
+
+Rollback:
+[ ] Remove deployment
+[ ] Deploy old version if needed
+[ ] Uninstall command available
+[ ] Business owner notified
+
+
+============================================================
+33. TICKET NOTE TEMPLATE
+============================================================
+
+Ticket Number:
+User/Device:
+Issue:
+Scope:
+Business Impact:
+
+Initial Checks:
+  - Client status:
+  - Collection membership:
+  - Deployment status:
+  - Software Center status:
+
+Logs Checked:
+  -
+  -
+
+Root Cause:
+  -
+
+Action Taken:
+  -
+
+Verification:
+  -
+
+Final Status:
+  Resolved / Monitoring / Escalated
+
+Next Action:
+  -
+
+
+============================================================
+34. ESCALATION MATRIX
+============================================================
+
+Escalate to SCCM Infrastructure Team when:
+  - MP is unhealthy
+  - SUP/WSUS is broken
+  - DP role failure
+  - Site component critical
+  - SQL/SCCM server issue
+  - SCCM upgrade issue
+
+Escalate to Network Team when:
+  - PXE request not reaching DP
+  - IP helper problem
+  - Boundary subnet/VPN mismatch
+  - Branch download slowness
+  - Firewall blocks SCCM traffic
+
+Escalate to Security Team when:
+  - Antivirus blocks SCCM client/content
+  - Certificate/PKI issue
+  - Defender policy conflict
+  - App blocked by security control
+
+Escalate to Application Owner when:
+  - Silent install command unknown
+  - Application compatibility issue
+  - License issue
+  - Vendor installer failure
+
+Escalate to Windows/Endpoint Team when:
+  - OS corruption
+  - WUA failure not SCCM-related
+  - DISM/SFC repair required
+  - Device-specific Windows issue
+
+Escalate to Database/SQL Team when:
+  - SQL performance issue
+  - Database maintenance issue
+  - Reporting/database connection issue
+
+
+============================================================
+35. OFFICIAL REFERENCE LINKS
+============================================================
+
+Microsoft Configuration Manager log files:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/log-files
+
+About Configuration Manager log files:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/about-log-files
+
+CMTrace:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/support/cmtrace
+
+Client health dashboard:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/manage/client-health-dashboard
+
+Client health checks:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/manage/client-health-checks
+
+Monitor clients:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/manage/monitor-clients
+
+Software update management:
+  https://learn.microsoft.com/en-us/intune/configmgr/sum/
+
+Troubleshoot software update management:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/update-management/troubleshoot-software-update-management
+
+Troubleshoot software update deployments:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/update-management/troubleshoot-software-update-deployments
+
+Track software update deployment process:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/update-management/track-software-update-deployment-process
+
+Boundary groups and distribution points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/boundary-groups-distribution-points
+
+Boundary groups and management points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/boundary-groups-management-points
+
+Manage distribution points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/install-and-configure-distribution-points
+
+Configuration Manager updates and servicing troubleshooting:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/setup-migrate-backup-recovery/understand-troubleshoot-updates-servicing
+
+
+============================================================
+END OF DOCUMENT
+============================================================

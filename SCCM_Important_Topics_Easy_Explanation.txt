@@ -1,0 +1,1813 @@
+SCCM / MECM IMPORTANT TOPICS - EASY EXPLANATION
+Organized Text Documentation
+Prepared for: SCCM Beginners, Helpdesk, Desktop Support, Endpoint Admins
+
+============================================================
+DOCUMENT PURPOSE
+============================================================
+
+This document lists the most important SCCM / MECM topics and explains them in easy words.
+
+SCCM is now officially called Microsoft Configuration Manager.
+Many people still say SCCM in daily IT work.
+
+Use this document to understand:
+  - What SCCM is
+  - How SCCM works
+  - Important SCCM components
+  - Application deployment
+  - Windows update deployment
+  - Software Center
+  - Client agent
+  - Distribution Point
+  - Management Point
+  - Boundary groups
+  - OSD / imaging
+  - Reporting
+  - Daily troubleshooting topics
+
+
+============================================================
+TABLE OF CONTENTS
+============================================================
+
+01. What is SCCM / MECM?
+02. SCCM Console
+03. SCCM Site
+04. Primary Site
+05. Central Administration Site
+06. Secondary Site
+07. Site Server
+08. Site Database / SQL Database
+09. Site System Roles
+10. Management Point
+11. Distribution Point
+12. Software Update Point
+13. Reporting Services Point
+14. Fallback Status Point
+15. SCCM Client Agent
+16. Client Installation
+17. Client Health
+18. Client Settings
+19. Device Discovery
+20. User Discovery
+21. Collections
+22. Device Collection
+23. User Collection
+24. Boundary
+25. Boundary Group
+26. Software Center
+27. Application
+28. Package and Program
+29. Deployment
+30. Available Deployment
+31. Required Deployment
+32. Detection Method
+33. Requirement Rules
+34. Dependencies
+35. Supersedence
+36. Content
+37. Content Library
+38. Client Cache
+39. Application Deployment Process
+40. Software Updates
+41. WSUS
+42. Automatic Deployment Rule
+43. Software Update Group
+44. Deployment Package
+45. Maintenance Window
+46. Restart / Reboot Control
+47. Compliance Status
+48. Inventory
+49. Hardware Inventory
+50. Software Inventory
+51. Asset Intelligence
+52. Reports
+53. Role-Based Administration
+54. Security Scope
+55. Remote Control
+56. Operating System Deployment
+57. PXE Boot
+58. Boot Image
+59. Operating System Image
+60. Task Sequence
+61. Driver Package
+62. User State Migration
+63. Endpoint Protection
+64. Cloud Management Gateway
+65. Co-management
+66. Intune vs SCCM
+67. Logs
+68. CMTrace
+69. SCCM Maintenance Tasks
+70. High Availability
+71. Common SCCM Flow
+72. Important SCCM Logs by Topic
+73. Beginner Learning Path
+74. Quick Revision Summary
+75. Official Reference Links
+
+
+============================================================
+01. WHAT IS SCCM / MECM?
+============================================================
+
+Easy meaning:
+  SCCM is a Microsoft tool used by IT teams to manage many computers from one place.
+
+Full name:
+  Microsoft Configuration Manager
+
+Old name:
+  SCCM = System Center Configuration Manager
+
+What SCCM can do:
+  - Install software on many computers
+  - Install Windows updates
+  - Install operating systems
+  - Collect hardware and software information
+  - Run scripts
+  - Manage compliance
+  - Control devices remotely
+  - Generate reports
+
+Simple example:
+  A company has 5,000 computers.
+  Installing software manually on every computer is impossible.
+  SCCM helps IT deploy the software to all computers from one console.
+
+
+============================================================
+02. SCCM CONSOLE
+============================================================
+
+Easy meaning:
+  SCCM Console is the main control panel for SCCM admins.
+
+What admins do in console:
+  - View devices
+  - Create collections
+  - Deploy applications
+  - Deploy updates
+  - Check reports
+  - Check client health
+  - Check distribution status
+  - Create task sequences
+
+Main console areas:
+  - Assets and Compliance
+  - Software Library
+  - Monitoring
+  - Administration
+
+Simple example:
+  If you want to deploy 7-Zip, you create the application from Software Library and deploy it to a device collection.
+
+
+============================================================
+03. SCCM SITE
+============================================================
+
+Easy meaning:
+  A site is the main management area in SCCM.
+
+A site contains:
+  - Site server
+  - Site database
+  - Clients
+  - Site system roles
+  - Deployments
+  - Collections
+  - Reports
+
+Simple example:
+  A company may have one primary SCCM site that manages all computers in the organization.
+
+
+============================================================
+04. PRIMARY SITE
+============================================================
+
+Easy meaning:
+  Primary Site is the main SCCM site that directly manages clients.
+
+It is responsible for:
+  - Client management
+  - Application deployment
+  - Update deployment
+  - Inventory
+  - Reporting
+  - Policy distribution
+
+Simple example:
+  Most medium or large organizations use at least one Primary Site.
+
+
+============================================================
+05. CENTRAL ADMINISTRATION SITE
+============================================================
+
+Easy meaning:
+  Central Administration Site, or CAS, is used in very large SCCM environments with multiple primary sites.
+
+Important:
+  CAS does not directly manage clients.
+  It manages multiple primary sites.
+
+Simple example:
+  A global company has separate primary sites for Asia, Europe, and America.
+  A CAS can manage all those primary sites together.
+
+
+============================================================
+06. SECONDARY SITE
+============================================================
+
+Easy meaning:
+  Secondary Site is used for remote locations when you need better control of network traffic.
+
+It helps with:
+  - Remote branch offices
+  - Slow network links
+  - Local content distribution
+  - Local client communication
+
+Simple example:
+  Head office is in Dhaka, branch office is in Chittagong.
+  If the branch has many computers and slow WAN, a secondary site may help.
+
+
+============================================================
+07. SITE SERVER
+============================================================
+
+Easy meaning:
+  Site Server is the main server where SCCM is installed.
+
+It runs SCCM services and controls SCCM activities.
+
+It usually handles:
+  - Site components
+  - Policies
+  - Deployments
+  - Communication with site roles
+  - Console operations
+
+Simple example:
+  Server name: SCCM01
+  This server hosts the Configuration Manager primary site.
+
+
+============================================================
+08. SITE DATABASE / SQL DATABASE
+============================================================
+
+Easy meaning:
+  SCCM stores its information in a SQL database.
+
+Database stores:
+  - Device records
+  - User records
+  - Collection membership
+  - Deployment status
+  - Inventory data
+  - Compliance data
+  - Configuration data
+
+Simple example:
+  When a computer reports that an update is installed, SCCM stores that status in SQL database.
+
+
+============================================================
+09. SITE SYSTEM ROLES
+============================================================
+
+Easy meaning:
+  Site system roles are special jobs assigned to SCCM servers.
+
+Common roles:
+  - Management Point
+  - Distribution Point
+  - Software Update Point
+  - Reporting Services Point
+  - Fallback Status Point
+  - State Migration Point
+
+Simple example:
+  One server can be Management Point and Distribution Point at the same time.
+
+
+============================================================
+10. MANAGEMENT POINT
+============================================================
+
+Easy meaning:
+  Management Point, or MP, is the communication point between SCCM client and SCCM site.
+
+Clients contact MP to:
+  - Get policy
+  - Send inventory
+  - Send status
+  - Send compliance result
+  - Ask for site information
+
+Simple example:
+  Client asks MP:
+    "Do I have any application or update to install?"
+
+Important log:
+  Client side:
+    LocationServices.log
+    CcmMessaging.log
+    PolicyAgent.log
+
+  Server side:
+    MPControl.log
+    MP_Policy.log
+
+
+============================================================
+11. DISTRIBUTION POINT
+============================================================
+
+Easy meaning:
+  Distribution Point, or DP, stores the files that clients download.
+
+DP stores:
+  - Application files
+  - Package files
+  - Update files
+  - OS images
+  - Boot images
+  - Driver packages
+
+Simple example:
+  You deploy Google Chrome.
+  SCCM clients download Chrome installer from the nearest DP.
+
+Why DP is important:
+  Without DP content, clients cannot install applications or updates.
+
+Important logs:
+  Server:
+    distmgr.log
+    PkgXferMgr.log
+    smsdpprov.log
+
+  Client:
+    CAS.log
+    ContentTransferManager.log
+    DataTransferService.log
+
+
+============================================================
+12. SOFTWARE UPDATE POINT
+============================================================
+
+Easy meaning:
+  Software Update Point, or SUP, connects SCCM with WSUS to manage Windows updates.
+
+SUP helps SCCM:
+  - Sync update metadata
+  - Know which updates exist
+  - Let clients scan for updates
+  - Manage update compliance
+
+Simple example:
+  SCCM uses SUP to know that KB update is required for Windows 10 clients.
+
+Important logs:
+  WCM.log
+  WSUSCtrl.log
+  wsyncmgr.log
+  WUAHandler.log
+  ScanAgent.log
+
+
+============================================================
+13. REPORTING SERVICES POINT
+============================================================
+
+Easy meaning:
+  Reporting Services Point is used to run SCCM reports.
+
+Reports can show:
+  - Patch compliance
+  - Application deployment status
+  - Client health
+  - Inventory
+  - Software installation count
+  - Hardware details
+
+Simple example:
+  Manager asks:
+    "How many computers installed this month's security updates?"
+  SCCM report can answer this.
+
+Important logs:
+  srsrp.log
+  srsrpsetup.log
+  SCCMReporting.log
+
+
+============================================================
+14. FALLBACK STATUS POINT
+============================================================
+
+Easy meaning:
+  Fallback Status Point, or FSP, receives status messages from clients when normal communication is not working.
+
+It is useful during:
+  - Client installation
+  - Client assignment
+  - Client communication troubleshooting
+
+Simple example:
+  If a client cannot fully communicate with MP during installation, it can send failure status to FSP.
+
+
+============================================================
+15. SCCM CLIENT AGENT
+============================================================
+
+Easy meaning:
+  SCCM Client Agent is the software installed on managed computers.
+
+Without SCCM client:
+  - SCCM cannot manage the computer properly
+  - Software Center will not work
+  - Application deployment will not work
+  - Update deployment will not work
+  - Inventory will not report
+
+Client service name:
+  SMS Agent Host
+
+Service name:
+  CcmExec
+
+Simple example:
+  WINA computer must have SCCM client installed before it can receive applications and updates.
+
+
+============================================================
+16. CLIENT INSTALLATION
+============================================================
+
+Easy meaning:
+  Client installation means installing SCCM agent on a computer.
+
+Common installation methods:
+  - Client push installation
+  - Manual installation
+  - Group Policy installation
+  - Software update-based installation
+  - OSD task sequence installation
+
+Simple command example:
+  ccmsetup.exe /mp:SCCMSERVER SMSSITECODE=S01
+
+Important logs:
+  ccmsetup.log
+  client.msi.log
+  ccm.log
+
+Simple troubleshooting:
+  If client does not install:
+    - Check admin permission
+    - Check firewall
+    - Check DNS
+    - Check ccmsetup.log
+
+
+============================================================
+17. CLIENT HEALTH
+============================================================
+
+Easy meaning:
+  Client health means whether SCCM client is working correctly or not.
+
+Healthy client should:
+  - Communicate with MP
+  - Receive policy
+  - Send inventory
+  - Run deployments
+  - Send status messages
+  - Pass client health check
+
+Common problems:
+  - Client inactive
+  - Client check failed
+  - CcmExec service stopped
+  - Policy not received
+
+Important logs:
+  CcmExec.log
+  CcmEval.log
+  ClientIDManagerStartup.log
+  LocationServices.log
+  CcmMessaging.log
+
+
+============================================================
+18. CLIENT SETTINGS
+============================================================
+
+Easy meaning:
+  Client Settings control how SCCM clients behave.
+
+Client settings control:
+  - Software Center
+  - Software updates
+  - Hardware inventory
+  - Software inventory
+  - Remote control
+  - Client cache size
+  - Power management
+  - Compliance settings
+  - Computer restart behavior
+
+Simple example:
+  If "Enable software updates on clients" is No, update deployment will not work properly.
+
+
+============================================================
+19. DEVICE DISCOVERY
+============================================================
+
+Easy meaning:
+  Device Discovery helps SCCM find computers from Active Directory or network.
+
+Common discovery:
+  - Active Directory System Discovery
+  - Heartbeat Discovery
+  - Network Discovery
+
+Simple example:
+  A new computer is joined to domain.
+  AD System Discovery finds it and adds it to SCCM console.
+
+Important logs:
+  adsysdis.log
+  ddm.log
+
+
+============================================================
+20. USER DISCOVERY
+============================================================
+
+Easy meaning:
+  User Discovery helps SCCM find users from Active Directory.
+
+Why it is needed:
+  - User-based deployments
+  - User collections
+  - Software available for logged-in user
+
+Simple example:
+  You deploy an app to user "Rahim".
+  SCCM must discover that user first.
+
+Important logs:
+  adusrdis.log
+  adsgdis.log
+
+
+============================================================
+21. COLLECTIONS
+============================================================
+
+Easy meaning:
+  Collection is a group of devices or users.
+
+Collections are used for:
+  - Deploying applications
+  - Deploying updates
+  - Running reports
+  - Applying client settings
+  - Organizing devices/users
+
+Simple example:
+  Collection name:
+    Win10-1809
+  It contains all Windows 10 version 1809 devices.
+
+Important:
+  Deployments are targeted to collections.
+
+
+============================================================
+22. DEVICE COLLECTION
+============================================================
+
+Easy meaning:
+  Device Collection is a group of computers.
+
+Common examples:
+  - All Windows 10 Devices
+  - Finance Department PCs
+  - Dhaka Branch Laptops
+  - Test Computers
+  - Pilot Patch Group
+
+Simple example:
+  If you deploy 7-Zip to "IT Test PCs", only devices in that collection receive it.
+
+
+============================================================
+23. USER COLLECTION
+============================================================
+
+Easy meaning:
+  User Collection is a group of users.
+
+Common examples:
+  - HR Users
+  - Finance Users
+  - Software Developers
+  - VPN Users
+
+Simple example:
+  If you deploy an app to a user collection, the app can follow the user when they log in.
+
+
+============================================================
+24. BOUNDARY
+============================================================
+
+Easy meaning:
+  Boundary tells SCCM where a client is located in the network.
+
+Boundary can be based on:
+  - IP subnet
+  - IP address range
+  - Active Directory site
+  - IPv6 prefix
+  - VPN boundary
+
+Simple example:
+  IP range 192.168.10.1 - 192.168.10.254 belongs to Dhaka office.
+
+Why boundary is important:
+  SCCM uses boundary to help clients find site systems like DP, MP, and SUP.
+
+
+============================================================
+25. BOUNDARY GROUP
+============================================================
+
+Easy meaning:
+  Boundary Group is a group of boundaries connected to SCCM site systems.
+
+Boundary group tells clients:
+  - Which DP to use
+  - Which MP to use
+  - Which SUP to use
+  - Which site to assign
+
+Simple example:
+  Dhaka Boundary Group includes:
+    Dhaka IP range
+    Dhaka Distribution Point
+    Dhaka Management Point
+
+Common issue:
+  If boundary group is wrong, clients may fail to download applications or updates.
+
+
+============================================================
+26. SOFTWARE CENTER
+============================================================
+
+Easy meaning:
+  Software Center is the user-facing app where users install software and updates.
+
+Users can see:
+  - Available applications
+  - Required applications
+  - Windows updates
+  - Operating system deployments
+  - Installation status
+  - Restart notifications
+
+Simple example:
+  User opens Software Center and clicks Install for 7-Zip.
+
+Common issue:
+  App deployed but not showing.
+  Check:
+    - Collection membership
+    - Policy
+    - Available time
+    - User Experience setting
+    - Requirements
+
+
+============================================================
+27. APPLICATION
+============================================================
+
+Easy meaning:
+  Application is the modern SCCM method to deploy software.
+
+Application includes:
+  - Install command
+  - Uninstall command
+  - Detection method
+  - Requirements
+  - Dependencies
+  - Supersedence
+  - Content files
+
+Simple example:
+  Mozilla Firefox application:
+    Install command: setup.exe /silent
+    Detection: firefox.exe exists
+
+Important logs:
+  AppIntentEval.log
+  AppDiscovery.log
+  AppEnforce.log
+
+
+============================================================
+28. PACKAGE AND PROGRAM
+============================================================
+
+Easy meaning:
+  Package and Program is the older SCCM software deployment method.
+
+It is simpler than Application model.
+
+Package contains:
+  - Source files
+  - Program command line
+
+Difference from Application:
+  Package usually does not have advanced detection method like Application.
+
+Simple example:
+  Run a script:
+    install.bat
+
+Important log:
+  execmgr.log
+
+
+============================================================
+29. DEPLOYMENT
+============================================================
+
+Easy meaning:
+  Deployment means sending an application, update, package, or task sequence to a collection.
+
+Deployment answers:
+  - What will be installed?
+  - Who will receive it?
+  - When will it be available?
+  - Is it optional or mandatory?
+  - Will users see it?
+
+Simple example:
+  Deploy 7-Zip to IT Test PCs as Available.
+
+
+============================================================
+30. AVAILABLE DEPLOYMENT
+============================================================
+
+Easy meaning:
+  Available deployment means users can choose to install it.
+
+Simple example:
+  7-Zip appears in Software Center.
+  User clicks Install manually.
+
+Good for:
+  - Optional software
+  - User-requested software
+  - Pilot testing
+
+
+============================================================
+31. REQUIRED DEPLOYMENT
+============================================================
+
+Easy meaning:
+  Required deployment means SCCM installs it automatically based on schedule/deadline.
+
+Simple example:
+  Security update must install by Friday 10 PM.
+
+Good for:
+  - Security patches
+  - Mandatory business software
+  - Compliance deployments
+
+Important:
+  Required deployment can affect many users, so test before production.
+
+
+============================================================
+32. DETECTION METHOD
+============================================================
+
+Easy meaning:
+  Detection Method tells SCCM how to know if an application is already installed.
+
+Common detection types:
+  - MSI product code
+  - File exists
+  - Registry key exists
+  - Script returns installed result
+
+Simple example:
+  Firefox detection:
+    C:\Program Files\Mozilla Firefox\firefox.exe exists
+
+Why detection is important:
+  If detection is wrong, Software Center may show Install even after app is installed.
+
+Important log:
+  AppDiscovery.log
+
+
+============================================================
+33. REQUIREMENT RULES
+============================================================
+
+Easy meaning:
+  Requirement rules decide if an application is allowed to install on a device.
+
+Examples:
+  - Only install on Windows 10
+  - Only install on 64-bit OS
+  - Only install if RAM is more than 8 GB
+  - Only install on laptop
+
+Simple example:
+  A 64-bit application should not install on 32-bit Windows.
+
+Important log:
+  AppIntentEval.log
+
+
+============================================================
+34. DEPENDENCIES
+============================================================
+
+Easy meaning:
+  Dependency means one application needs another application first.
+
+Simple example:
+  An application needs .NET Runtime.
+  SCCM installs .NET Runtime first, then installs the main application.
+
+Common issue:
+  Main app fails because dependency is missing or not detected.
+
+
+============================================================
+35. SUPERSEDENCE
+============================================================
+
+Easy meaning:
+  Supersedence means a new application version replaces an old version.
+
+Simple example:
+  Chrome 125 replaces Chrome 124.
+
+SCCM can:
+  - Upgrade old app
+  - Uninstall old app
+  - Install new app
+
+Common use:
+  Application version upgrades.
+
+
+============================================================
+36. CONTENT
+============================================================
+
+Easy meaning:
+  Content means the actual files needed for installation.
+
+Examples:
+  - setup.exe
+  - .msi file
+  - scripts
+  - update files
+  - OS image
+  - driver files
+
+Simple example:
+  Application is the instruction.
+  Content is the actual installer file.
+
+
+============================================================
+37. CONTENT LIBRARY
+============================================================
+
+Easy meaning:
+  Content Library is where SCCM stores content on site servers and distribution points.
+
+It stores:
+  - Application files
+  - Update files
+  - Package files
+  - Images
+  - Drivers
+
+Simple example:
+  When you distribute 7-Zip to DP, SCCM stores it inside the DP content library.
+
+
+============================================================
+38. CLIENT CACHE
+============================================================
+
+Easy meaning:
+  Client cache is the local folder where SCCM downloads content before installing.
+
+Default folder:
+  C:\Windows\ccmcache
+
+Simple example:
+  Before installing Firefox, the client downloads Firefox setup files into ccmcache.
+
+Common issue:
+  Cache full.
+  Download fails.
+
+Important logs:
+  CAS.log
+  ContentTransferManager.log
+
+
+============================================================
+39. APPLICATION DEPLOYMENT PROCESS
+============================================================
+
+Easy process:
+
+  1. Collect application installer.
+  2. Find silent install command.
+  3. Find silent uninstall command.
+  4. Create SCCM Application.
+  5. Add detection method.
+  6. Distribute content to DP.
+  7. Deploy to test collection.
+  8. Test installation.
+  9. Test detection.
+  10. Deploy to production collection.
+  11. Monitor deployment status.
+
+Simple example:
+  Deploy VLC:
+    Install command: vlc.exe /S
+    Detection: vlc.exe exists
+    Target: IT Test PCs first
+
+
+============================================================
+40. SOFTWARE UPDATES
+============================================================
+
+Easy meaning:
+  Software Updates in SCCM are used to manage Windows updates and Microsoft product updates.
+
+SCCM can:
+  - Sync updates
+  - Deploy updates
+  - Check which devices need updates
+  - Download update content
+  - Install updates
+  - Report compliance
+
+Simple example:
+  Deploy monthly security updates to all Windows 10 devices.
+
+Important logs:
+  UpdatesDeployment.log
+  UpdatesStore.log
+  UpdatesHandler.log
+  WUAHandler.log
+  ScanAgent.log
+
+
+============================================================
+41. WSUS
+============================================================
+
+Easy meaning:
+  WSUS means Windows Server Update Services.
+
+SCCM uses WSUS with SUP to scan and manage updates.
+
+Important:
+  In SCCM, admins usually manage updates from SCCM console, not directly from WSUS console.
+
+Simple example:
+  WSUS helps clients know which updates are applicable.
+  SCCM handles deployment and reporting.
+
+
+============================================================
+42. AUTOMATIC DEPLOYMENT RULE
+============================================================
+
+Easy meaning:
+  Automatic Deployment Rule, or ADR, automatically selects and deploys updates.
+
+ADR can:
+  - Search updates by product/classification/date
+  - Create Software Update Group
+  - Download updates
+  - Deploy updates
+
+Simple example:
+  Every Patch Tuesday, ADR automatically creates a monthly update deployment.
+
+Important logs:
+  ruleengine.log
+  PatchDownloader.log
+
+
+============================================================
+43. SOFTWARE UPDATE GROUP
+============================================================
+
+Easy meaning:
+  Software Update Group is a group of updates.
+
+Simple example:
+  "2026 June Windows 10 Security Updates" contains all June security updates for Windows 10.
+
+Why useful:
+  Easier to deploy and monitor many updates together.
+
+
+============================================================
+44. DEPLOYMENT PACKAGE
+============================================================
+
+Easy meaning:
+  Deployment Package stores downloaded update files.
+
+Simple example:
+  June patch update files are downloaded into a deployment package and distributed to DP.
+
+Important:
+  If deployment package is not distributed to DP, clients cannot download update content.
+
+
+============================================================
+45. MAINTENANCE WINDOW
+============================================================
+
+Easy meaning:
+  Maintenance Window controls when required installations can run.
+
+Simple example:
+  Servers can install updates only from 12 AM to 4 AM Sunday.
+
+Why useful:
+  Prevents installations during business hours.
+
+Common issue:
+  Required deployment does not install because maintenance window is too short or not active.
+
+Important log:
+  ServiceWindowManager.log
+
+
+============================================================
+46. RESTART / REBOOT CONTROL
+============================================================
+
+Easy meaning:
+  SCCM can control how and when computers restart after installations or updates.
+
+It can show:
+  - Restart notification
+  - Countdown
+  - Deadline
+  - Grace period
+
+Simple example:
+  After updates install, user gets restart notification.
+
+Important logs:
+  RebootCoordinator.log
+  UpdatesHandler.log
+
+
+============================================================
+47. COMPLIANCE STATUS
+============================================================
+
+Easy meaning:
+  Compliance shows whether devices meet the deployment requirement.
+
+Common statuses:
+  - Success
+  - In Progress
+  - Error
+  - Unknown
+  - Compliant
+  - Non-compliant
+  - Required
+  - Installed
+
+Simple example:
+  Patch compliance 95% means 95% targeted devices installed required updates.
+
+Common issue:
+  Unknown status means SCCM does not yet have proper scan/status result.
+
+
+============================================================
+48. INVENTORY
+============================================================
+
+Easy meaning:
+  Inventory means SCCM collects information from client computers.
+
+Inventory helps answer:
+  - What hardware does this PC have?
+  - What software is installed?
+  - What OS version is running?
+  - How much RAM/disk is available?
+
+Simple example:
+  SCCM can report all computers with less than 8 GB RAM.
+
+
+============================================================
+49. HARDWARE INVENTORY
+============================================================
+
+Easy meaning:
+  Hardware Inventory collects hardware and system information.
+
+It can collect:
+  - Computer model
+  - BIOS version
+  - RAM
+  - CPU
+  - Disk
+  - Network adapter
+  - OS version
+
+Important logs:
+  InventoryAgent.log
+  dataldr.log
+
+
+============================================================
+50. SOFTWARE INVENTORY
+============================================================
+
+Easy meaning:
+  Software Inventory can collect file/software information from clients.
+
+Important:
+  Do not scan too many locations because it can create extra load.
+
+Simple example:
+  Find computers that have a specific executable file.
+
+Important logs:
+  InventoryAgent.log
+  sinvproc.log
+
+
+============================================================
+51. ASSET INTELLIGENCE
+============================================================
+
+Easy meaning:
+  Asset Intelligence helps organize software and license-related information.
+
+It helps with:
+  - Software inventory
+  - Software categories
+  - License reporting
+  - Asset management
+
+Simple example:
+  IT can see how many computers have Microsoft Office installed.
+
+
+============================================================
+52. REPORTS
+============================================================
+
+Easy meaning:
+  Reports show SCCM data in useful format.
+
+Common reports:
+  - Patch compliance
+  - Application deployment status
+  - Client health
+  - Hardware inventory
+  - Software inventory
+  - Operating system version
+  - Failed deployments
+
+Simple example:
+  Generate report:
+    "All computers missing June security updates"
+
+
+============================================================
+53. ROLE-BASED ADMINISTRATION
+============================================================
+
+Easy meaning:
+  Role-Based Administration, or RBAC, controls what admins can see and do in SCCM.
+
+It controls:
+  - Permissions
+  - Security roles
+  - Security scopes
+  - Collection access
+
+Simple example:
+  Helpdesk can remote control computers but cannot modify SCCM site settings.
+
+
+============================================================
+54. SECURITY SCOPE
+============================================================
+
+Easy meaning:
+  Security Scope limits which objects an admin can access.
+
+Simple example:
+  A regional admin can manage only Dhaka branch collections and applications.
+
+Why useful:
+  Prevents admins from changing things outside their responsibility.
+
+
+============================================================
+55. REMOTE CONTROL
+============================================================
+
+Easy meaning:
+  Remote Control lets IT support connect to a user's computer remotely.
+
+Used for:
+  - Troubleshooting
+  - User support
+  - Checking Software Center
+  - Fixing client issue
+
+Important logs:
+  CmRcViewer.log
+  CmRcService.log
+
+
+============================================================
+56. OPERATING SYSTEM DEPLOYMENT
+============================================================
+
+Easy meaning:
+  Operating System Deployment, or OSD, means installing Windows using SCCM.
+
+OSD can:
+  - Format disk
+  - Install Windows
+  - Install drivers
+  - Join domain
+  - Install SCCM client
+  - Install standard applications
+
+Simple example:
+  New laptop arrives.
+  IT uses SCCM task sequence to install company Windows image.
+
+
+============================================================
+57. PXE BOOT
+============================================================
+
+Easy meaning:
+  PXE Boot means booting a computer from network to start OS deployment.
+
+Simple example:
+  Press F12 on a new laptop.
+  It boots from network and starts SCCM task sequence.
+
+Common issue:
+  PXE says no task sequence available.
+
+Important log:
+  smspxe.log
+
+
+============================================================
+58. BOOT IMAGE
+============================================================
+
+Easy meaning:
+  Boot Image is a small Windows PE image used to start task sequence.
+
+It includes:
+  - WinPE
+  - Network drivers
+  - Storage drivers
+  - SCCM task sequence environment
+
+Simple example:
+  Computer boots into WinPE, then downloads and runs task sequence.
+
+Common issue:
+  Network driver missing in boot image, so PXE starts but cannot continue.
+
+
+============================================================
+59. OPERATING SYSTEM IMAGE
+============================================================
+
+Easy meaning:
+  OS Image is the Windows image file used to install Windows.
+
+Common format:
+  .wim
+
+Simple example:
+  Windows 10 Enterprise image is deployed to new computers.
+
+Important:
+  OS image should be updated regularly with patches.
+
+
+============================================================
+60. TASK SEQUENCE
+============================================================
+
+Easy meaning:
+  Task Sequence is a step-by-step automation process.
+
+It can:
+  - Partition disk
+  - Apply Windows image
+  - Install drivers
+  - Join domain
+  - Install SCCM client
+  - Install applications
+  - Run scripts
+
+Simple example:
+  Step 1: Format disk
+  Step 2: Install Windows
+  Step 3: Install drivers
+  Step 4: Join domain
+  Step 5: Install apps
+
+Important log:
+  smsts.log
+
+
+============================================================
+61. DRIVER PACKAGE
+============================================================
+
+Easy meaning:
+  Driver Package contains device drivers for laptops/desktops.
+
+Used during:
+  - Operating system deployment
+  - New model support
+  - Driver installation
+
+Simple example:
+  Dell Latitude 5450 driver package is used for that laptop model.
+
+Common issue:
+  Wrong driver package causes network/display/storage issue.
+
+
+============================================================
+62. USER STATE MIGRATION
+============================================================
+
+Easy meaning:
+  User State Migration helps copy user data/settings during computer replacement or OS migration.
+
+It can migrate:
+  - User files
+  - User profiles
+  - Some settings
+
+Related tool:
+  USMT = User State Migration Tool
+
+Simple example:
+  Old laptop replaced with new laptop.
+  User files/settings are copied during migration.
+
+
+============================================================
+63. ENDPOINT PROTECTION
+============================================================
+
+Easy meaning:
+  Endpoint Protection helps manage Microsoft Defender/antimalware policy from SCCM.
+
+It can manage:
+  - Antimalware policy
+  - Malware reports
+  - Security status
+
+Simple example:
+  SCCM deploys Defender policy to all workstations.
+
+Important logs:
+  EndpointProtectionAgent.log
+  ExternalEventAgent.log
+
+
+============================================================
+64. CLOUD MANAGEMENT GATEWAY
+============================================================
+
+Easy meaning:
+  Cloud Management Gateway, or CMG, helps manage internet-based clients.
+
+Without CMG:
+  Clients usually need VPN or internal network to talk to SCCM.
+
+With CMG:
+  Internet clients can receive policy and send status through cloud.
+
+Simple example:
+  Laptop user works from home.
+  CMG allows SCCM client to communicate without VPN.
+
+Important:
+  CMG is useful for remote workforce.
+
+
+============================================================
+65. CO-MANAGEMENT
+============================================================
+
+Easy meaning:
+  Co-management means managing Windows devices using both SCCM and Microsoft Intune.
+
+Some workloads can move to Intune, such as:
+  - Compliance policies
+  - Resource access policies
+  - Windows Update policies
+  - Endpoint protection
+  - Client apps
+
+Simple example:
+  SCCM handles app deployment, Intune handles compliance policy.
+
+
+============================================================
+66. INTUNE VS SCCM
+============================================================
+
+Easy meaning:
+  SCCM is strong for on-premises management.
+  Intune is strong for cloud/mobile/modern management.
+
+SCCM is commonly used for:
+  - Domain-joined Windows PCs
+  - On-premises app deployment
+  - OSD imaging
+  - Detailed enterprise control
+
+Intune is commonly used for:
+  - Cloud-managed devices
+  - Mobile devices
+  - Remote devices
+  - Modern management
+
+Simple example:
+  Large organizations often use both together.
+
+
+============================================================
+67. LOGS
+============================================================
+
+Easy meaning:
+  Logs are text files that show what SCCM is doing.
+
+Why logs are important:
+  SCCM troubleshooting is mostly log reading.
+
+Simple example:
+  If app installation fails, check AppEnforce.log.
+  If update scan fails, check WUAHandler.log.
+  If task sequence fails, check smsts.log.
+
+Common client log location:
+  C:\Windows\CCM\Logs
+
+Client setup log location:
+  C:\Windows\ccmsetup\Logs
+
+
+============================================================
+68. CMTRACE
+============================================================
+
+Easy meaning:
+  CMTrace is a Microsoft log viewer for SCCM logs.
+
+Why use it:
+  - Easier to read logs
+  - Highlights errors and warnings
+  - Shows live log updates
+  - Better than Notepad for SCCM logs
+
+Simple example:
+  Open AppEnforce.log in CMTrace to find install error code.
+
+
+============================================================
+69. SCCM MAINTENANCE TASKS
+============================================================
+
+Easy meaning:
+  Maintenance tasks help keep SCCM database and site clean.
+
+Examples:
+  - Delete aged discovery data
+  - Delete inactive client data
+  - Delete aged inventory history
+  - Rebuild indexes
+  - Summarize data
+  - Clean old status messages
+
+Why important:
+  Without maintenance, SCCM database becomes large and slow.
+
+
+============================================================
+70. HIGH AVAILABILITY
+============================================================
+
+Easy meaning:
+  High Availability means keeping SCCM service running even when a server/component has problem.
+
+Examples:
+  - Passive site server
+  - SQL Always On
+  - Multiple Management Points
+  - Multiple Distribution Points
+  - Multiple Software Update Points
+
+Simple example:
+  If one DP fails, clients can use another DP.
+
+
+============================================================
+71. COMMON SCCM FLOW
+============================================================
+
+Easy SCCM working flow:
+
+  1. Admin creates application/update/deployment.
+  2. SCCM creates policy.
+  3. Client contacts Management Point.
+  4. Client downloads policy.
+  5. Client evaluates requirement/detection.
+  6. Client finds content location from DP.
+  7. Client downloads content.
+  8. Client installs app/update.
+  9. Client sends status to SCCM.
+  10. Admin sees result in console/report.
+
+Remember:
+  Policy -> Evaluation -> Content -> Download -> Install -> Report
+
+
+============================================================
+72. IMPORTANT SCCM LOGS BY TOPIC
+============================================================
+
+Client install:
+  ccmsetup.log
+  client.msi.log
+  ccm.log
+
+Client health:
+  CcmExec.log
+  CcmEval.log
+  ClientIDManagerStartup.log
+
+Policy:
+  PolicyAgent.log
+  PolicyEvaluator.log
+
+Location:
+  LocationServices.log
+  ClientLocation.log
+
+Application:
+  AppIntentEval.log
+  AppDiscovery.log
+  AppEnforce.log
+
+Package/program:
+  execmgr.log
+
+Content download:
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+Software updates:
+  UpdatesDeployment.log
+  UpdatesStore.log
+  UpdatesHandler.log
+  WUAHandler.log
+  ScanAgent.log
+
+SUP/WSUS:
+  WCM.log
+  WSUSCtrl.log
+  wsyncmgr.log
+  PatchDownloader.log
+
+Distribution:
+  distmgr.log
+  PkgXferMgr.log
+  smsdpprov.log
+
+OSD:
+  smsts.log
+  smspxe.log
+
+Inventory:
+  InventoryAgent.log
+  dataldr.log
+  sinvproc.log
+
+Reporting:
+  srsrp.log
+  SCCMReporting.log
+
+Console:
+  SmsAdminUI.log
+  SMSProv.log
+
+
+============================================================
+73. BEGINNER LEARNING PATH
+============================================================
+
+If you are new to SCCM, learn in this order:
+
+  1. What is SCCM?
+  2. SCCM console basics
+  3. Site server and site roles
+  4. SCCM client agent
+  5. Device discovery
+  6. Collections
+  7. Boundaries and boundary groups
+  8. Software Center
+  9. Application deployment
+  10. Detection method
+  11. Content and Distribution Point
+  12. Software updates
+  13. SUP and WSUS
+  14. ADR
+  15. Inventory
+  16. Reporting
+  17. Logs and CMTrace
+  18. OSD and task sequence
+  19. RBAC
+  20. Daily troubleshooting
+
+Practice tasks:
+  - Install SCCM client on test PC.
+  - Create device collection.
+  - Create simple application.
+  - Deploy app to test collection.
+  - Check Software Center.
+  - Read AppEnforce.log.
+  - Deploy one test update.
+  - Check WUAHandler.log.
+  - Generate a report.
+
+
+============================================================
+74. QUICK REVISION SUMMARY
+============================================================
+
+SCCM:
+  Tool to manage many computers.
+
+Client:
+  Software installed on managed computer.
+
+Management Point:
+  Gives policy to clients and receives client data.
+
+Distribution Point:
+  Stores files for clients to download.
+
+Software Update Point:
+  Handles update scanning through WSUS.
+
+Collection:
+  Group of users or devices.
+
+Boundary:
+  Network location of client.
+
+Boundary Group:
+  Connects boundaries with DP/MP/SUP.
+
+Software Center:
+  User app for installing software and updates.
+
+Application:
+  Modern software deployment object.
+
+Detection Method:
+  Tells SCCM if app is installed.
+
+Deployment:
+  Sending app/update/task sequence to collection.
+
+Available:
+  User can install manually.
+
+Required:
+  SCCM installs automatically.
+
+Inventory:
+  Collects hardware/software information.
+
+OSD:
+  Installs Windows using SCCM.
+
+Task Sequence:
+  Automated steps for OS deployment.
+
+Logs:
+  Main troubleshooting tool in SCCM.
+
+CMTrace:
+  Best tool to read SCCM logs.
+
+
+============================================================
+75. OFFICIAL REFERENCE LINKS
+============================================================
+
+Microsoft Configuration Manager introduction:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/understand/introduction
+
+Configuration Manager log files:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/log-files
+
+About Configuration Manager log files:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/about-log-files
+
+Deploy clients to Windows computers:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/deploy/deploy-clients-to-windows-computers
+
+Content management fundamentals:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/fundamental-concepts-for-content-management
+
+Boundary groups:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/boundary-groups
+
+Boundary groups and distribution points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/boundary-groups-distribution-points
+
+Software updates introduction:
+  https://learn.microsoft.com/en-us/intune/configmgr/sum/understand/software-updates-introduction
+
+Discovery methods:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/configure-discovery-methods
+
+Client settings:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/deploy/about-client-settings
+
+Role-based administration:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/understand/fundamentals-of-role-based-administration
+
+Distribution points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/install-and-configure-distribution-points
+
+Maintenance tasks:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/manage/maintenance-tasks
+
+
+============================================================
+END OF DOCUMENT
+============================================================

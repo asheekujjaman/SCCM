@@ -1,0 +1,2348 @@
+SCCM / MECM COMMON ORGANIZATIONAL ISSUES AND PROVEN SOLUTIONS
+Organized Text Documentation
+Prepared for: SCCM / MECM Administration and Troubleshooting
+
+============================================================
+DOCUMENT PURPOSE
+============================================================
+
+This document lists the most common SCCM / MECM issues seen in real organizations and gives practical, proven troubleshooting solutions.
+
+Use this document when:
+  - Software Center is empty
+  - Applications are not installing
+  - Windows updates are not showing
+  - SCCM client is inactive
+  - PXE / OSD task sequence fails
+  - Content cannot download
+  - SUP / WSUS sync fails
+  - Inventory or reporting is not correct
+  - Boundary, DP, MP, or policy problems exist
+
+
+============================================================
+TABLE OF CONTENTS
+============================================================
+
+01. Universal SCCM Troubleshooting Flow
+02. Useful Client Action Commands
+03. Client Installation Failed
+04. Client Shows "No" in Console
+05. Client Installed but Inactive
+06. Client Not Receiving Policy
+07. Software Center Empty
+08. Application Not Showing in Software Center
+09. Application Download Stuck
+10. Application Installation Failed
+11. Application Installed but Still Shows Install Button
+12. Application Requirement / Dependency Problem
+13. Package and Program Deployment Failed
+14. Software Updates Not Showing in Software Center
+15. Software Update Shows Unknown Status
+16. Software Update Scan Failed
+17. Software Update Download Failed
+18. Software Update Installation Failed
+19. Update Deployment Exists but Not Active
+20. SUP / WSUS Sync Failed
+21. Automatic Deployment Rule Failed
+22. Content Distribution Failed
+23. Client Cannot Find Distribution Point
+24. Boundary Group Misconfiguration
+25. Distribution Point Unhealthy
+26. PXE Boot Not Working
+27. No Task Sequence Available
+28. Task Sequence Failed
+29. Domain Join Failed During OSD
+30. Driver Issue During OSD
+31. Hardware Inventory Not Updating
+32. Software Inventory Not Updating
+33. AD Discovery Not Working
+34. Duplicate or Stale Devices
+35. Management Point Unhealthy
+36. Client Registration / Certificate Issue
+37. Reporting Services Not Working
+38. Compliance Status Not Updating
+39. Maintenance Window Blocking Installation
+40. Restart / Pending Reboot Problem
+41. SCCM Console Slow or Access Denied
+42. Remote Control Not Working
+43. Endpoint Protection Policy Not Applying
+44. Site Backup Failed
+45. SCCM Client Cache Full
+46. Quick Master Checklist
+
+
+============================================================
+01. UNIVERSAL SCCM TROUBLESHOOTING FLOW
+============================================================
+
+Before troubleshooting any SCCM problem, follow this order:
+
+  1. Confirm the device is discovered in SCCM.
+  2. Confirm SCCM client is installed.
+  3. Confirm client is Active.
+  4. Confirm device is in the correct collection.
+  5. Confirm the deployment is enabled.
+  6. Confirm deployment available time has already passed.
+  7. Confirm deployment is visible in Software Center if needed.
+  8. Confirm client received policy.
+  9. Confirm detection / scan / evaluation result.
+  10. Confirm content is distributed to DP.
+  11. Confirm boundary group has correct DP / MP / SUP.
+  12. Confirm download works.
+  13. Confirm install command works manually.
+  14. Confirm client sends state message back to server.
+  15. Confirm console status updates after summarization.
+
+Most SCCM problems follow this chain:
+
+  DISCOVERY
+      ↓
+  CLIENT INSTALLATION
+      ↓
+  CLIENT COMMUNICATION
+      ↓
+  POLICY RECEIVED
+      ↓
+  EVALUATION / DETECTION
+      ↓
+  CONTENT LOCATION
+      ↓
+  DOWNLOAD
+      ↓
+  INSTALLATION
+      ↓
+  STATE MESSAGE / REPORTING
+
+
+============================================================
+02. USEFUL CLIENT ACTION COMMANDS
+============================================================
+
+Run PowerShell as Administrator on the client.
+
+Machine Policy Retrieval and Evaluation Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000021}"
+
+Hardware Inventory Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000001}"
+
+Software Inventory Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000002}"
+
+Discovery Data Collection Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000003}"
+
+Software Updates Deployment Evaluation Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000108}"
+
+Software Updates Scan Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000113}"
+
+Application Deployment Evaluation Cycle:
+  Invoke-WmiMethod -Namespace root\ccm -Class SMS_Client -Name TriggerSchedule "{00000000-0000-0000-0000-000000000121}"
+
+Alternative GUI method:
+  Control Panel
+    Configuration Manager
+      Actions tab
+        Select action
+        Run Now
+
+
+============================================================
+03. CLIENT INSTALLATION FAILED
+============================================================
+
+Symptoms:
+  - SCCM client not installing
+  - Client push fails
+  - Device remains Client = No
+  - ccmsetup.exe starts but stops
+  - Software Center not installed
+
+Most common root causes:
+  - Client push account is not local administrator
+  - Admin$ share disabled
+  - Firewall blocks RPC/WMI/File and Printer Sharing
+  - DNS name resolution problem
+  - Wrong client installation command
+  - Old/broken SCCM client remains
+  - Antivirus blocks ccmsetup
+  - Management Point not reachable
+  - Boundary/site assignment problem
+
+Important logs:
+  Client:
+    C:\Windows\ccmsetup\Logs\ccmsetup.log
+    C:\Windows\ccmsetup\Logs\client.msi.log
+
+  Site Server:
+    ccm.log
+
+Proven solution:
+  1. From SCCM server, test DNS:
+       ping CLIENTNAME
+       nslookup CLIENTNAME
+
+  2. Test admin share:
+       \\CLIENTNAME\admin$
+
+  3. Confirm client push account or SCCM server computer account is local admin on target device.
+
+  4. Confirm firewall allows:
+       File and Printer Sharing
+       WMI
+       RPC
+       Remote Administration
+
+  5. Check ccm.log on SCCM server.
+       If access denied appears, fix admin permission.
+       If network path not found appears, fix DNS/firewall/admin$.
+
+  6. On client, open ccmsetup.log.
+       Check download source, MP, and installation return code.
+
+  7. Manual reinstall command:
+       ccmsetup.exe /mp:SCCMSERVER FSP=SCCMSERVER SMSSITECODE=S01
+
+  8. If client is corrupted, uninstall then reinstall:
+       ccmsetup.exe /uninstall
+       Wait until ccmsetup service is removed.
+       Delete C:\Windows\ccmsetup if needed.
+       Reinstall the client.
+
+Verification:
+  - Configuration Manager applet appears in Control Panel.
+  - CcmExec service is running.
+  - SCCM console shows Client = Yes.
+  - Client Activity becomes Active.
+
+Prevention:
+  - Keep firewall GPO ready for SCCM clients.
+  - Use correct client push account.
+  - Make sure DNS and AD discovery are healthy.
+  - Avoid cloning machines without sysprep.
+
+
+============================================================
+04. CLIENT SHOWS "NO" IN CONSOLE
+============================================================
+
+Symptoms:
+  - Device exists in SCCM console
+  - Client column shows No
+  - No Software Center on device
+
+Most common root causes:
+  - Device discovered from AD but client not installed
+  - Client push failed
+  - Client installed but not assigned to site
+  - Duplicate/stale device record
+
+Important logs:
+  ccm.log
+  ccmsetup.log
+  ClientLocation.log
+  LocationServices.log
+
+Proven solution:
+  1. Right-click device in console.
+  2. Select Install Client.
+  3. Check ccm.log on site server.
+  4. Check ccmsetup.log on client.
+  5. If manual install is needed, run:
+       ccmsetup.exe /mp:SCCMSERVER SMSSITECODE=S01
+  6. If duplicate record exists, delete old/stale record and allow rediscovery.
+  7. Run Machine Policy Retrieval after installation.
+
+Verification:
+  - Device shows Client = Yes.
+  - Client Check Result = Passed.
+  - Policy Request time updates.
+
+
+============================================================
+05. CLIENT INSTALLED BUT INACTIVE
+============================================================
+
+Symptoms:
+  - Client = Yes
+  - Client Activity = Inactive
+  - Last policy request is old
+  - Software Center does not update
+
+Most common root causes:
+  - SMS Agent Host service stopped
+  - Client cannot reach Management Point
+  - Boundary/site assignment issue
+  - Certificate or registration issue
+  - Firewall/DNS problem
+  - Client health problem
+
+Important logs:
+  CcmExec.log
+  ClientIDManagerStartup.log
+  LocationServices.log
+  CcmMessaging.log
+  ClientLocation.log
+
+Proven solution:
+  1. On client, check service:
+       services.msc
+       SMS Agent Host = Running
+
+  2. Restart service:
+       net stop ccmexec
+       net start ccmexec
+
+  3. Confirm client site code:
+       Control Panel > Configuration Manager > General tab
+
+  4. Check LocationServices.log.
+       Confirm MP is discovered.
+
+  5. Check CcmMessaging.log.
+       Confirm client can send/receive communication with MP.
+
+  6. Run:
+       Machine Policy Retrieval and Evaluation Cycle
+       Discovery Data Collection Cycle
+
+  7. If still inactive, reinstall client.
+
+Verification:
+  - Policy Request time updates.
+  - Client Activity becomes Active.
+  - CcmMessaging.log shows successful communication.
+
+
+============================================================
+06. CLIENT NOT RECEIVING POLICY
+============================================================
+
+Symptoms:
+  - Deployment does not appear
+  - Software Center empty
+  - Policy request time not changing
+  - Client notification does not work
+
+Most common root causes:
+  - Client not in target collection
+  - Machine policy not updated
+  - MP communication issue
+  - Client settings/policy corruption
+  - Boundary issue
+  - Wrong site code
+
+Important logs:
+  PolicyAgent.log
+  PolicyEvaluator.log
+  CcmMessaging.log
+  LocationServices.log
+  CCMNotificationAgent.log
+
+Proven solution:
+  1. Confirm device is in the deployment collection.
+
+  2. Update collection membership:
+       Right-click collection
+       Update Membership
+
+  3. Run Machine Policy Retrieval on client.
+
+  4. Check PolicyAgent.log.
+       Look for new policy download.
+
+  5. Check PolicyEvaluator.log.
+       Confirm policy evaluation is successful.
+
+  6. Check CcmMessaging.log.
+       Confirm MP communication is successful.
+
+  7. If policy is stuck, restart SMS Agent Host.
+
+  8. If still not fixed, repair/reinstall SCCM client.
+
+Verification:
+  - New deployment policy appears in PolicyAgent.log.
+  - Software Center updates.
+  - Deployment appears under correct tab.
+
+
+============================================================
+07. SOFTWARE CENTER EMPTY
+============================================================
+
+Symptoms:
+  - Software Center opens but no apps/updates
+  - Applications tab is empty
+  - Updates tab is empty
+  - User says "nothing showing"
+
+Most common root causes:
+  - No deployment targeted to device/user
+  - Client policy not received
+  - Deployment is hidden
+  - Available time has not arrived
+  - Wrong collection
+  - App requirements not met
+  - User/device deployment confusion
+
+Important logs:
+  SCClient*.log
+  SoftwareCenterSystemTasks.log
+  PolicyAgent.log
+  AppIntentEval.log
+  UpdatesDeployment.log
+
+Proven solution:
+  1. Confirm deployment target:
+       Device deployment -> device must be in collection.
+       User deployment -> user must be in user collection.
+
+  2. Check deployment purpose:
+       Available deployments appear for users/devices.
+       Required deployments may install automatically depending on settings.
+
+  3. Check User Experience:
+       Must not be hidden if user needs to see it.
+
+  4. Check Scheduling:
+       Available time must already pass.
+
+  5. Run Machine Policy Retrieval.
+
+  6. Restart Software Center or restart SMS Agent Host.
+
+  7. Check logs:
+       PolicyAgent.log for policy
+       AppIntentEval.log for application
+       UpdatesDeployment.log for updates
+
+Verification:
+  - Deployment appears in Software Center.
+  - Logs show policy received and evaluated.
+
+
+============================================================
+08. APPLICATION NOT SHOWING IN SOFTWARE CENTER
+============================================================
+
+Symptoms:
+  - Application is deployed
+  - Device is in collection
+  - App not visible in Software Center
+
+Most common root causes:
+  - Deployment available time not reached
+  - User Experience hidden
+  - App deployed to user but user not logged in
+  - Requirement rule not satisfied
+  - Device not updated in collection membership
+  - Client policy not refreshed
+  - Application approval required
+  - App is superseded/replaced
+
+Important logs:
+  PolicyAgent.log
+  AppIntentEval.log
+  AppDiscovery.log
+  SCClient*.log
+
+Proven solution:
+  1. Check deployment collection membership.
+
+  2. Update collection membership.
+
+  3. Check deployment:
+       Purpose = Available or Required
+       Enabled = Yes
+       Available time = Now/past
+       User notification = Display in Software Center
+
+  4. Run Machine Policy Retrieval.
+
+  5. Check AppIntentEval.log.
+       If requirements not met, fix requirement rule.
+
+  6. If app is user-targeted, confirm correct user is logged in.
+
+  7. If approval is required, approve application request.
+
+Verification:
+  - AppIntentEval.log shows app applicable.
+  - Software Center displays the application.
+
+
+============================================================
+09. APPLICATION DOWNLOAD STUCK
+============================================================
+
+Symptoms:
+  - Application stuck at Downloading
+  - Download stuck at 0%
+  - Error about content not available
+  - Software Center retry does not help
+
+Most common root causes:
+  - Content not distributed to DP
+  - Boundary group missing/wrong
+  - Client cannot find DP
+  - DP is down/unhealthy
+  - BITS issue
+  - Client cache full
+  - Network/proxy issue
+
+Important logs:
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+  LocationServices.log
+  AppEnforce.log
+
+Proven solution:
+  1. Confirm content is distributed:
+       Monitoring > Distribution Status > Content Status
+
+  2. If failed, redistribute content to DP.
+
+  3. Check boundary group:
+       Client IP/subnet must belong to boundary.
+       Boundary must be in boundary group.
+       Boundary group must have DP assigned.
+
+  4. Check CAS.log:
+       Confirm client finds DP.
+
+  5. Check ContentTransferManager.log:
+       Confirm download job starts.
+
+  6. Check DataTransferService.log:
+       Confirm BITS download.
+
+  7. Clear client cache if full:
+       Control Panel > Configuration Manager > Cache tab
+       or use client cache cleanup script.
+
+  8. Restart SMS Agent Host and retry.
+
+Verification:
+  - CAS.log shows content location found.
+  - DataTransferService.log shows download completed.
+  - App installation starts.
+
+
+============================================================
+10. APPLICATION INSTALLATION FAILED
+============================================================
+
+Symptoms:
+  - Application appears but fails to install
+  - Software Center shows Failed
+  - Error code appears
+  - Installer works manually but not via SCCM
+
+Most common root causes:
+  - Wrong install command
+  - Silent switch missing
+  - Installer requires user interaction
+  - Runs as SYSTEM but needs user profile
+  - Missing prerequisite
+  - Wrong working directory
+  - Reboot pending
+  - Antivirus blocks install
+  - Exit code not handled
+
+Important logs:
+  AppEnforce.log
+  AppDiscovery.log
+  AppIntentEval.log
+
+Proven solution:
+  1. Open AppEnforce.log.
+       Find exact command line SCCM executed.
+       Find exit code.
+
+  2. Copy the same command and test manually as admin.
+
+  3. Test as SYSTEM using PsExec:
+       psexec -s -i cmd.exe
+       Run install command from SYSTEM cmd.
+
+  4. Add proper silent switch:
+       MSI example:
+         msiexec /i app.msi /qn /norestart
+
+       EXE example:
+         setup.exe /silent /norestart
+         or vendor-specific silent parameter
+
+  5. Set correct installation behavior:
+       Install for system
+       Whether or not user is logged on
+
+  6. Add prerequisites as dependencies.
+
+  7. Add expected success codes:
+       0 = Success
+       3010 = Success, reboot required
+
+  8. Update content and redistribute after changing source files.
+
+Verification:
+  - AppEnforce.log shows exit code 0 or 3010.
+  - AppDiscovery.log shows detection successful.
+  - Software Center shows Installed.
+
+
+============================================================
+11. APPLICATION INSTALLED BUT STILL SHOWS INSTALL BUTTON
+============================================================
+
+Symptoms:
+  - Application installed successfully
+  - Software Center still shows Install
+  - Console shows Failed or Not installed
+  - Reinstall happens repeatedly
+
+Most common root causes:
+  - Detection method is wrong
+  - Wrong MSI product code
+  - Wrong file path
+  - 32-bit/64-bit registry path mismatch
+  - App installs per-user but detection checks machine location
+  - Detection checks old version
+
+Important logs:
+  AppDiscovery.log
+  AppEnforce.log
+
+Proven solution:
+  1. Open AppDiscovery.log.
+
+  2. Find detection result:
+       App not discovered
+       Detection failed
+       Method returned false
+
+  3. Fix detection method:
+       For MSI:
+         Use correct product code.
+
+       For File:
+         Correct path and file name.
+         Example:
+           C:\Program Files\Mozilla Firefox\firefox.exe
+
+       For Registry:
+         Check 32-bit vs 64-bit registry.
+         Enable/disable "This registry key is associated with a 32-bit application on 64-bit systems" correctly.
+
+  4. If app installs per-user:
+       Use user-based detection path or registry under HKCU.
+       Or install app machine-wide.
+
+  5. Run Application Deployment Evaluation Cycle.
+
+Verification:
+  - AppDiscovery.log shows detection = true.
+  - Software Center changes to Installed.
+
+
+============================================================
+12. APPLICATION REQUIREMENT / DEPENDENCY PROBLEM
+============================================================
+
+Symptoms:
+  - App not applicable
+  - App not showing
+  - App stuck waiting for dependency
+  - Requirement not met
+
+Most common root causes:
+  - OS version requirement wrong
+  - Architecture requirement wrong
+  - Disk/RAM condition not met
+  - Dependency app not deployed
+  - Supersedence configured wrongly
+
+Important logs:
+  AppIntentEval.log
+  AppDiscovery.log
+  DCMAgent.log
+
+Proven solution:
+  1. Check AppIntentEval.log.
+       This log tells why app is or is not applicable.
+
+  2. Check application Deployment Type requirements.
+
+  3. Remove unnecessary requirements for testing.
+
+  4. Confirm dependency application:
+       Has valid detection method
+       Content is distributed
+       Is deployed or set to auto install
+
+  5. Check supersedence:
+       Confirm old/new app relationship.
+       Confirm uninstall/install behavior.
+
+Verification:
+  - AppIntentEval.log shows applicable.
+  - Application appears or installs.
+
+
+============================================================
+13. PACKAGE AND PROGRAM DEPLOYMENT FAILED
+============================================================
+
+Symptoms:
+  - Old package/program deployment fails
+  - Program does not run
+  - No output on client
+
+Most common root causes:
+  - Wrong command line
+  - Program disabled
+  - Run mode wrong
+  - Content missing from DP
+  - Working directory issue
+  - Runs only when user logged on/not logged on incorrectly
+
+Important logs:
+  execmgr.log
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+Proven solution:
+  1. Check execmgr.log.
+       Confirm package/program policy received.
+       Confirm command executed.
+       Confirm exit code.
+
+  2. Confirm content distribution.
+
+  3. Check program properties:
+       Run mode
+       User interaction
+       Drive mode
+       Estimated runtime
+       Maximum runtime
+
+  4. Test command manually.
+
+  5. Prefer modern Application model if detection is required.
+
+Verification:
+  - execmgr.log shows successful execution.
+  - Program status reports success.
+
+
+============================================================
+14. SOFTWARE UPDATES NOT SHOWING IN SOFTWARE CENTER
+============================================================
+
+Symptoms:
+  - Update is deployed
+  - Client requires update
+  - Update not visible under Software Center > Updates
+
+Most common root causes:
+  - Deployment not targeted to client collection
+  - Client not in Required status
+  - Deployment hidden from Software Center
+  - Available time not reached
+  - Software Update Scan Cycle not completed
+  - Deployment Evaluation Cycle not completed
+  - Client setting disables software updates
+  - SUP/WSUS scan failure
+
+Important logs:
+  UpdatesDeployment.log
+  UpdatesStore.log
+  WUAHandler.log
+  ScanAgent.log
+  PolicyAgent.log
+
+Proven solution:
+  1. Confirm client is in target collection.
+
+  2. In All Software Updates, select update:
+       Click View Required.
+       Confirm target client is listed.
+
+  3. Check deployment properties:
+       Scheduling:
+         Software available time = As soon as possible or past time.
+
+       User Experience:
+         Display in Software Center and show notifications.
+
+  4. Check Client Settings:
+       Enable software updates on clients = Yes.
+
+  5. On client, run:
+       Machine Policy Retrieval
+       Software Updates Scan Cycle
+       Software Updates Deployment Evaluation Cycle
+
+  6. Check UpdatesDeployment.log:
+       Confirm assignment is active and evaluated.
+
+  7. Check UpdatesStore.log:
+       Search KB number.
+       Confirm Required/Missing state.
+
+Verification:
+  - Update appears under Software Center > Updates.
+  - UpdatesDeployment.log shows actionable update.
+  - UpdatesStore.log shows update is required.
+
+
+============================================================
+15. SOFTWARE UPDATE SHOWS UNKNOWN STATUS
+============================================================
+
+Symptoms:
+  - Console shows Unknown
+  - Compliance report incomplete
+  - Update status not changing
+
+Most common root causes:
+  - Client has not scanned against WSUS/SUP
+  - WUA scan failed
+  - Client cannot reach SUP
+  - State message not sent
+  - Client inactive
+  - WSUS GPO conflict
+  - SUP unhealthy
+
+Important logs:
+  WUAHandler.log
+  ScanAgent.log
+  UpdatesStore.log
+  StateMessage.log
+  CcmMessaging.log
+  statesys.log on site server
+
+Proven solution:
+  1. On client, run Software Updates Scan Cycle.
+
+  2. Check WUAHandler.log.
+       Confirm scan started and completed.
+
+  3. Check ScanAgent.log.
+       Confirm SUP location is assigned.
+
+  4. Check LocationServices.log.
+       Confirm client finds SUP.
+
+  5. Check Windows Update GPO:
+       Domain GPO should not point clients to wrong WSUS.
+
+  6. Check StateMessage.log.
+       Confirm client sends state messages.
+
+  7. On site server, check statesys.log.
+       Confirm state messages are processed.
+
+Verification:
+  - Client moves from Unknown to Required/Compliant.
+  - WUAHandler.log shows successful scan.
+
+
+============================================================
+16. SOFTWARE UPDATE SCAN FAILED
+============================================================
+
+Symptoms:
+  - Software update scan fails
+  - WUAHandler.log shows error
+  - Client remains Unknown
+  - Updates never become Required
+
+Most common root causes:
+  - SUP/WSUS not reachable
+  - Wrong WSUS URL in registry/GPO
+  - WSUS IIS issue
+  - Windows Update Agent problem
+  - Proxy issue
+  - Corrupt Windows Update cache
+
+Important logs:
+  WUAHandler.log
+  ScanAgent.log
+  LocationServices.log
+  WindowsUpdate.log
+
+Proven solution:
+  1. Check LocationServices.log.
+       Confirm SUP location is found.
+
+  2. Check WUAHandler.log.
+       Note exact error code.
+
+  3. Confirm registry:
+       HKLM\Software\Policies\Microsoft\Windows\WindowsUpdate
+       WUServer should point to correct SUP/WSUS.
+
+  4. If wrong GPO is applying, fix Group Policy.
+
+  5. Reset Windows Update components if cache corruption suspected:
+       net stop wuauserv
+       net stop bits
+       rename C:\Windows\SoftwareDistribution SoftwareDistribution.old
+       net start bits
+       net start wuauserv
+
+  6. Run Software Updates Scan Cycle again.
+
+Verification:
+  - WUAHandler.log shows scan completed successfully.
+  - UpdatesStore.log shows update status.
+
+
+============================================================
+17. SOFTWARE UPDATE DOWNLOAD FAILED
+============================================================
+
+Symptoms:
+  - Update appears but download fails
+  - Stuck downloading
+  - Error in Software Center
+  - Update content unavailable
+
+Most common root causes:
+  - Update content not downloaded into deployment package
+  - Content not distributed to DP
+  - Boundary group missing DP
+  - DP unreachable
+  - Client cache full
+  - BITS problem
+
+Important logs:
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+  UpdatesHandler.log
+
+Proven solution:
+  1. Check update deployment package:
+       Downloaded = Yes.
+
+  2. Check Distribution Status:
+       Content must be Success on DP.
+
+  3. Redistribute content if DP status failed.
+
+  4. Check boundary group has DP.
+
+  5. Clear client cache if full.
+
+  6. Restart BITS and SMS Agent Host:
+       net stop bits
+       net start bits
+       net stop ccmexec
+       net start ccmexec
+
+  7. Retry installation.
+
+Verification:
+  - DataTransferService.log shows completed transfer.
+  - UpdatesHandler.log proceeds to install.
+
+
+============================================================
+18. SOFTWARE UPDATE INSTALLATION FAILED
+============================================================
+
+Symptoms:
+  - Update downloads but fails to install
+  - Software Center shows Failed
+  - Update returns Windows Update error code
+
+Most common root causes:
+  - Windows component store issue
+  - Servicing stack problem
+  - Pending reboot
+  - Update not applicable after rescan
+  - Corrupt Windows Update cache
+  - Insufficient disk space
+  - Maintenance window ended
+
+Important logs:
+  UpdatesHandler.log
+  WUAHandler.log
+  CBS.log
+  RebootCoordinator.log
+  ServiceWindowManager.log
+
+Proven solution:
+  1. Check UpdatesHandler.log for install result.
+
+  2. Check WUAHandler.log for Windows Update Agent error.
+
+  3. Check C:\Windows\Logs\CBS\CBS.log for servicing errors.
+
+  4. Reboot the client if pending restart exists.
+
+  5. Check disk space.
+
+  6. Run system repair:
+       DISM /Online /Cleanup-Image /RestoreHealth
+       sfc /scannow
+
+  7. Reset Windows Update cache if needed.
+
+  8. Retry Software Updates Deployment Evaluation Cycle.
+
+Verification:
+  - Update installs successfully.
+  - Client reports Compliant.
+
+
+============================================================
+19. UPDATE DEPLOYMENT EXISTS BUT NOT ACTIVE
+============================================================
+
+Symptoms:
+  - Update is deployed
+  - Client receives assignment
+  - Software Center does not show update
+  - UpdatesDeployment.log says:
+       Assignment is still not active
+       Unable to evaluate assignment as it is not activated yet
+       Total actionable updates = 0
+
+Most common root causes:
+  - Software available time is in the future
+  - Client local time is wrong
+  - Server time/time zone mismatch
+  - Deployment uses UTC and time conversion is misunderstood
+
+Important logs:
+  UpdatesDeployment.log
+  PolicyAgent.log
+
+Proven solution:
+  1. Open deployment properties.
+
+  2. Go to Scheduling tab.
+
+  3. Set:
+       Software available time = As soon as possible
+
+  4. For testing, set:
+       Installation deadline = As soon as possible
+
+  5. Check client date/time/time zone:
+       date /t
+       time /t
+       tzutil /g
+
+  6. Check SCCM server date/time/time zone.
+
+  7. Run:
+       Machine Policy Retrieval
+       Software Updates Deployment Evaluation Cycle
+
+Verification:
+  - UpdatesDeployment.log no longer says "not active".
+  - Update appears in Software Center.
+
+
+============================================================
+20. SUP / WSUS SYNC FAILED
+============================================================
+
+Symptoms:
+  - Updates not appearing in console
+  - Synchronization failed
+  - Products/classifications not updating
+  - WSUS health issue
+
+Most common root causes:
+  - WSUS service/IIS problem
+  - SUP role misconfiguration
+  - Proxy/firewall issue
+  - WSUS database problem
+  - Product/classification mismatch
+  - Expired metadata/corrupt WSUS content
+
+Important logs:
+  wsyncmgr.log
+  WCM.log
+  WSUSCtrl.log
+  SUPSetup.log
+
+Proven solution:
+  1. Check WSUSCtrl.log.
+       Confirm WSUS is healthy.
+
+  2. Check WCM.log.
+       Confirm SCCM can configure WSUS.
+
+  3. Check wsyncmgr.log.
+       Confirm sync starts and finishes.
+
+  4. Check proxy settings if internet access is required.
+
+  5. Confirm selected products/classifications.
+
+  6. Run manual synchronization:
+       Software Library > Software Updates > Synchronize Software Updates
+
+  7. If WSUS database is unhealthy, perform WSUS cleanup and maintenance.
+
+Verification:
+  - wsyncmgr.log shows sync completed.
+  - New updates appear in All Software Updates.
+
+
+============================================================
+21. AUTOMATIC DEPLOYMENT RULE FAILED
+============================================================
+
+Symptoms:
+  - ADR does not create Software Update Group
+  - ADR does not download updates
+  - ADR does not deploy
+  - Patch Tuesday automation fails
+
+Most common root causes:
+  - Search criteria returns no updates
+  - Updates are expired/superseded
+  - Deployment package path permission issue
+  - Download failed
+  - Schedule not reached
+  - ADR disabled
+
+Important logs:
+  ruleengine.log
+  PatchDownloader.log
+  wsyncmgr.log
+
+Proven solution:
+  1. Preview ADR results.
+       Confirm updates are returned.
+
+  2. Check ADR criteria:
+       Product
+       Classification
+       Supersedence
+       Date released/revised
+       Required count
+
+  3. Check deployment package source path:
+       SCCM server computer account needs permission.
+
+  4. Check PatchDownloader.log.
+
+  5. Run ADR manually for testing.
+
+  6. Confirm deployment is created and enabled.
+
+Verification:
+  - ADR creates Software Update Group.
+  - Updates download successfully.
+  - Deployment appears under Deployments.
+
+
+============================================================
+22. CONTENT DISTRIBUTION FAILED
+============================================================
+
+Symptoms:
+  - Content status failed
+  - Package stuck In Progress
+  - App/update content not available
+  - DP missing content
+
+Most common root causes:
+  - DP disk full
+  - Network issue between site server and DP
+  - Permission issue
+  - Content source path unavailable
+  - Antivirus lock
+  - DP role unhealthy
+
+Important logs:
+  distmgr.log
+  PkgXferMgr.log
+  smsdpprov.log
+  SMSdpmon.log
+
+Proven solution:
+  1. Check Monitoring > Distribution Status > Content Status.
+
+  2. Check distmgr.log.
+       Confirms package processing.
+
+  3. Check PkgXferMgr.log.
+       Confirms package transfer to DP.
+
+  4. On DP, check smsdpprov.log.
+
+  5. Confirm DP has free disk space.
+
+  6. Confirm source files still exist.
+
+  7. Redistribute content:
+       Right-click content
+       Redistribute
+
+  8. If content library is damaged, validate content or remove/re-add DP role after backup/planning.
+
+Verification:
+  - Content status becomes Success.
+  - Client can download content.
+
+
+============================================================
+23. CLIENT CANNOT FIND DISTRIBUTION POINT
+============================================================
+
+Symptoms:
+  - Download stuck at 0%
+  - CAS.log says no location found
+  - Client cannot download app/update/package
+  - Content available on DP but client does not use it
+
+Most common root causes:
+  - Boundary missing
+  - Boundary group missing DP
+  - Client IP not included in boundary
+  - VPN subnet not added
+  - DP not assigned to boundary group
+  - Fallback disabled or delayed
+
+Important logs:
+  LocationServices.log
+  CAS.log
+  ContentTransferManager.log
+
+Proven solution:
+  1. On client, check IP:
+       ipconfig /all
+
+  2. In SCCM console, check:
+       Administration > Hierarchy Configuration > Boundaries
+
+  3. Confirm client IP/subnet/range is included.
+
+  4. Confirm boundary is added to Boundary Group.
+
+  5. Confirm Boundary Group has DP under References tab.
+
+  6. Run Machine Policy Retrieval.
+
+  7. Retry download.
+
+Verification:
+  - LocationServices.log shows correct boundary group.
+  - CAS.log shows DP location found.
+
+
+============================================================
+24. BOUNDARY GROUP MISCONFIGURATION
+============================================================
+
+Symptoms:
+  - Some clients work, others fail
+  - VPN clients fail
+  - Clients download from wrong DP
+  - Slow downloads
+  - SUP/MP/DP location problem
+
+Most common root causes:
+  - Missing subnet/range
+  - Wrong AD site
+  - Overlapping boundaries
+  - VPN IP range not included
+  - DP/SUP/MP not referenced
+  - Fallback setting wrong
+
+Important logs:
+  LocationServices.log
+  ClientLocation.log
+  CAS.log
+  ScanAgent.log
+
+Proven solution:
+  1. Prefer IP range boundaries for accuracy.
+
+  2. Add all office/VPN subnet ranges.
+
+  3. Avoid overlapping boundaries unless intentionally designed.
+
+  4. Add boundaries to correct boundary group.
+
+  5. In boundary group References tab:
+       Assign site system servers.
+       Add DP.
+       Add SUP if required.
+       Add MP if required.
+
+  6. Configure fallback only if needed.
+
+  7. Run Machine Policy Retrieval on affected clients.
+
+Verification:
+  - Client resolves correct site systems.
+  - Downloads start from expected DP.
+  - Update scan finds correct SUP.
+
+
+============================================================
+25. DISTRIBUTION POINT UNHEALTHY
+============================================================
+
+Symptoms:
+  - DP status critical
+  - Content validation failed
+  - Clients fail to download
+  - PXE on DP not working
+
+Most common root causes:
+  - IIS issue
+  - Disk full
+  - Content library corruption
+  - DP certificate issue
+  - SMS_DP$ share problem
+  - Antivirus blocking content library
+  - DP role installation problem
+
+Important logs:
+  SMSdpmon.log
+  smsdpprov.log
+  distmgr.log
+  PkgXferMgr.log
+
+Proven solution:
+  1. Check DP disk space.
+
+  2. Check IIS service.
+
+  3. Confirm SMS_DP$ share exists.
+
+  4. Validate content from console.
+
+  5. Redistribute failed packages.
+
+  6. Exclude SCCM content library from antivirus scanning.
+
+  7. If DP is severely broken:
+       Remove DP role.
+       Clean old content carefully.
+       Reinstall DP role.
+
+Verification:
+  - DP status becomes healthy.
+  - Content status becomes Success.
+  - Clients download successfully.
+
+
+============================================================
+26. PXE BOOT NOT WORKING
+============================================================
+
+Symptoms:
+  - Client does not PXE boot
+  - PXE timeout
+  - No boot filename received
+  - PXE responder not replying
+
+Most common root causes:
+  - IP helper missing
+  - DHCP option misconfigured
+  - PXE responder/WDS service stopped
+  - Boot image not distributed to PXE DP
+  - PXE not enabled on DP
+  - Firewall/network issue
+
+Important logs:
+  smspxe.log
+
+Proven solution:
+  1. Confirm DP has PXE enabled.
+
+  2. Confirm boot image is distributed to PXE DP.
+
+  3. Confirm PXE responder or WDS service is running.
+
+  4. Use IP helpers on network switches/routers.
+       This is usually better than DHCP options.
+
+  5. Check smspxe.log while client attempts PXE.
+
+  6. Restart PXE service if needed.
+
+Verification:
+  - smspxe.log shows client MAC request.
+  - Client downloads boot image.
+
+
+============================================================
+27. NO TASK SEQUENCE AVAILABLE
+============================================================
+
+Symptoms:
+  - PXE works but says no task sequence
+  - Device boots but no deployment found
+  - Unknown computer does not receive TS
+
+Most common root causes:
+  - Device not in target collection
+  - Task sequence not deployed to PXE/media
+  - Unknown computer support disabled
+  - Duplicate device record exists
+  - Deployment availability not reached
+  - Deployment expired
+
+Important logs:
+  smspxe.log
+  smsts.log
+  MP_ClientID.log
+
+Proven solution:
+  1. Confirm task sequence is deployed.
+
+  2. Confirm deployment setting:
+       Make available to PXE and boot media.
+
+  3. Confirm target collection:
+       Known device -> correct collection.
+       Unknown device -> Unknown Computers collection.
+
+  4. Delete duplicate/stale record if MAC/SMBIOS already exists.
+
+  5. Check deployment schedule.
+
+  6. Update collection membership.
+
+Verification:
+  - PXE shows available task sequence.
+  - smspxe.log shows advertisement found.
+
+
+============================================================
+28. TASK SEQUENCE FAILED
+============================================================
+
+Symptoms:
+  - OSD fails at a step
+  - Error code displayed
+  - Machine reboots unexpectedly
+  - TS stops during content download or install
+
+Most common root causes:
+  - Missing content on DP
+  - Boundary problem
+  - Wrong command/script
+  - Driver issue
+  - Disk partition issue
+  - Domain join issue
+  - App install failure
+  - Incorrect task sequence variable
+
+Important logs:
+  smsts.log
+  CAS.log
+  AppEnforce.log
+  ccmsetup.log
+
+Proven solution:
+  1. Open smsts.log.
+       Search:
+         failed
+         error
+         return code
+
+  2. Identify failed step name.
+
+  3. If content download failed:
+       Check CAS.log and boundary group.
+       Confirm content on DP.
+
+  4. If application install step failed:
+       Check AppEnforce.log.
+
+  5. If client install failed:
+       Check ccmsetup.log.
+
+  6. If disk step failed:
+       Check partition format settings.
+
+  7. Test failed command manually.
+
+Verification:
+  - Task sequence completes.
+  - Device boots into OS.
+  - SCCM client is installed.
+
+
+============================================================
+29. DOMAIN JOIN FAILED DURING OSD
+============================================================
+
+Symptoms:
+  - Task sequence completes but device not domain joined
+  - Domain join step fails
+  - Error in smsts.log or NetSetup.log
+
+Most common root causes:
+  - Wrong domain join account/password
+  - Account lacks permission in OU
+  - Wrong OU path
+  - DNS/network issue
+  - Time difference
+  - Computer object already exists with permission issue
+
+Important logs:
+  smsts.log
+  C:\Windows\Debug\NetSetup.log
+
+Proven solution:
+  1. Verify domain join account password.
+
+  2. Confirm account has permission to create/join computers in target OU.
+
+  3. Validate OU path format:
+       LDAP://OU=Workstations,DC=domain,DC=com
+
+  4. Confirm DNS points to domain DNS.
+
+  5. Check network connectivity during OSD.
+
+  6. Delete existing computer object if permission conflict exists.
+
+  7. Check NetSetup.log after failure.
+
+Verification:
+  - Device joins domain.
+  - Computer object appears in correct OU.
+
+
+============================================================
+30. DRIVER ISSUE DURING OSD
+============================================================
+
+Symptoms:
+  - No network after image
+  - Blue screen after deployment
+  - Storage disk not found
+  - Touchpad/display/network missing
+  - Driver package not applying
+
+Most common root causes:
+  - Wrong driver package
+  - Wrong WMI model query
+  - Missing storage/NIC driver in boot image
+  - Driver package not distributed
+  - Driver package too broad/conflicting
+
+Important logs:
+  smsts.log
+  Dism.log
+  MP_DriverManager.log
+
+Proven solution:
+  1. Confirm exact model:
+       wmic computersystem get model
+
+  2. Use model-specific driver package.
+
+  3. Use WMI condition for model.
+
+  4. Confirm driver package is distributed to DP.
+
+  5. For WinPE network/storage issue:
+       Add NIC/storage driver to boot image.
+       Update DP with new boot image.
+
+  6. Avoid mixing many unrelated drivers in one package.
+
+Verification:
+  - Network works in WinPE.
+  - OS boots successfully.
+  - Device Manager has no critical missing drivers.
+
+
+============================================================
+31. HARDWARE INVENTORY NOT UPDATING
+============================================================
+
+Symptoms:
+  - Hardware details old/missing
+  - Reports not updated
+  - Console Resource Explorer stale
+
+Most common root causes:
+  - Hardware inventory disabled
+  - Client not running inventory cycle
+  - WMI problem on client
+  - Inventory file not processed by site server
+  - Client communication issue
+
+Important logs:
+  InventoryAgent.log
+  InventoryProvider.log
+  dataldr.log
+
+Proven solution:
+  1. Confirm client setting enables hardware inventory.
+
+  2. Run Hardware Inventory Cycle.
+
+  3. Check InventoryAgent.log.
+
+  4. If WMI error appears, repair WMI carefully.
+
+  5. On site server, check dataldr.log.
+
+  6. Check Resource Explorer after processing.
+
+Verification:
+  - InventoryAgent.log shows successful report.
+  - dataldr.log processes inventory.
+  - Console data updates.
+
+
+============================================================
+32. SOFTWARE INVENTORY NOT UPDATING
+============================================================
+
+Symptoms:
+  - File inventory missing
+  - Software inventory report old
+  - Expected file not listed
+
+Most common root causes:
+  - Software inventory disabled
+  - Inventory rules not configured
+  - Inventory path too broad
+  - Client cycle not running
+  - Server processing delay
+
+Important logs:
+  InventoryAgent.log
+  sinvproc.log
+
+Proven solution:
+  1. Confirm software inventory is enabled in client settings.
+
+  2. Configure specific inventory rules.
+       Avoid scanning entire C:\ drive unnecessarily.
+
+  3. Run Software Inventory Cycle.
+
+  4. Check InventoryAgent.log.
+
+  5. Check sinvproc.log on site server.
+
+Verification:
+  - Software inventory file/report appears.
+  - Console/report updates.
+
+
+============================================================
+33. AD DISCOVERY NOT WORKING
+============================================================
+
+Symptoms:
+  - New devices/users not appearing
+  - AD group membership not updating
+  - Collections based on AD groups not updating
+
+Most common root causes:
+  - Discovery disabled
+  - Wrong LDAP path
+  - Discovery account lacks permission
+  - Delta discovery disabled
+  - AD replication delay
+  - Collection update schedule too slow
+
+Important logs:
+  adsysdis.log
+  adusrdis.log
+  adsgdis.log
+  ddm.log
+
+Proven solution:
+  1. Check Discovery Methods:
+       Administration > Hierarchy Configuration > Discovery Methods
+
+  2. Confirm correct OU/LDAP path.
+
+  3. Confirm discovery account can read AD objects.
+
+  4. Enable Delta Discovery where useful.
+
+  5. Run Full Discovery manually.
+
+  6. Check relevant AD discovery log.
+
+  7. Update affected collections.
+
+Verification:
+  - New AD objects appear in SCCM.
+  - ddm.log processes discovery records.
+
+
+============================================================
+34. DUPLICATE OR STALE DEVICES
+============================================================
+
+Symptoms:
+  - Same device appears multiple times
+  - Old record remains after reimage
+  - Deployment goes to wrong record
+  - PXE says no advertisement because MAC exists on another record
+
+Most common root causes:
+  - Reimaging without cleanup
+  - Cloned device without sysprep
+  - Duplicate SMBIOS GUID/MAC
+  - Obsolete discovery records
+  - Client GUID duplicate
+
+Important logs:
+  ClientIDManagerStartup.log
+  ddm.log
+
+Proven solution:
+  1. Identify duplicate records by:
+       Name
+       MAC address
+       SMBIOS GUID
+       Resource ID
+
+  2. Delete obsolete/stale duplicate from SCCM console.
+
+  3. If cloned machines share identity:
+       Run sysprep before cloning.
+       Reinstall SCCM client.
+
+  4. Enable maintenance tasks:
+       Delete Aged Discovery Data
+       Delete Inactive Client Discovery Data
+
+  5. Re-run discovery and client policy.
+
+Verification:
+  - Only one active record remains.
+  - Client receives correct deployment.
+
+
+============================================================
+35. MANAGEMENT POINT UNHEALTHY
+============================================================
+
+Symptoms:
+  - MP status critical
+  - Clients cannot get policy
+  - Clients cannot send inventory/status
+  - MPControl.log errors
+
+Most common root causes:
+  - IIS issue
+  - MP role installation problem
+  - Certificate problem
+  - SQL connectivity issue
+  - Authentication issue
+  - Site component failure
+
+Important logs:
+  MPControl.log
+  MPSetup.log
+  MPMSI.log
+  MP_Policy.log
+  MP_Status.log
+
+Proven solution:
+  1. Check MPControl.log.
+
+  2. Check IIS:
+       Default Web Site
+       SMS_MP virtual directories
+       Application pools
+
+  3. Check MPSetup.log and MPMSI.log if recently installed.
+
+  4. Confirm MP can connect to SQL/site server.
+
+  5. Check certificates if HTTPS is used.
+
+  6. Remove and reinstall MP role if corrupted.
+
+Verification:
+  - MPControl.log shows healthy.
+  - Clients receive policy.
+  - Client communication works.
+
+
+============================================================
+36. CLIENT REGISTRATION / CERTIFICATE ISSUE
+============================================================
+
+Symptoms:
+  - Client installed but cannot register
+  - ClientIDManagerStartup.log errors
+  - Policy not received
+  - HTTPS communication fails
+  - PKI environment client issue
+
+Most common root causes:
+  - Missing client authentication certificate
+  - Wrong certificate template
+  - Expired certificate
+  - Trusted root missing
+  - Client GUID duplicate
+  - MP configured for HTTPS only but client has no cert
+
+Important logs:
+  ClientIDManagerStartup.log
+  CcmMessaging.log
+  LocationServices.log
+  MP_ClientID.log
+
+Proven solution:
+  1. Check ClientIDManagerStartup.log.
+
+  2. For HTTPS:
+       Confirm client has valid Client Authentication certificate.
+       Confirm certificate chain is trusted.
+       Confirm certificate is not expired.
+
+  3. Confirm MP mode:
+       HTTP
+       HTTPS
+       Enhanced HTTP
+
+  4. Check CcmMessaging.log for authentication errors.
+
+  5. Reinstall client if GUID/certificate identity is corrupted.
+
+Verification:
+  - Client registers successfully.
+  - Policy download works.
+
+
+============================================================
+37. REPORTING SERVICES NOT WORKING
+============================================================
+
+Symptoms:
+  - Reports do not open
+  - Reporting point critical
+  - Access denied
+  - Report data old/missing
+
+Most common root causes:
+  - SSRS not configured correctly
+  - Reporting Services Point role issue
+  - RBAC permission issue
+  - SQL permission issue
+  - Report server URL wrong
+  - Summarization delay
+
+Important logs:
+  srsrp.log
+  srsrpsetup.log
+  srsrpMSI.log
+  SCCMReporting.log
+
+Proven solution:
+  1. Confirm SSRS is installed and configured.
+
+  2. Check Reporting Services Point role.
+
+  3. Check srsrp.log.
+
+  4. For access denied:
+       Check SCCM security role.
+       Check security scope.
+       Check SSRS permissions.
+
+  5. For missing data:
+       Check inventory/state message processing.
+       Run summarization if needed.
+
+Verification:
+  - Reports open successfully.
+  - User sees allowed reports.
+  - Data appears correctly.
+
+
+============================================================
+38. COMPLIANCE STATUS NOT UPDATING
+============================================================
+
+Symptoms:
+  - Deployment status old
+  - Compliance report wrong
+  - Client installed app/update but console not updated
+  - Unknown or In Progress remains too long
+
+Most common root causes:
+  - State messages not sent
+  - Client communication issue
+  - Management Point issue
+  - State system backlog
+  - Reporting delay
+  - Client not evaluated again
+
+Important logs:
+  StateMessage.log
+  CcmMessaging.log
+  statesys.log
+  statmgr.log
+
+Proven solution:
+  1. On client, check StateMessage.log.
+       Confirm state messages are generated.
+
+  2. Check CcmMessaging.log.
+       Confirm state messages sent to MP.
+
+  3. On site server, check statesys.log.
+
+  4. Check Monitoring > System Status for backlog.
+
+  5. Run deployment evaluation cycle again.
+
+  6. Wait for summarization/reporting delay.
+
+Verification:
+  - Deployment status changes.
+  - Reports update.
+  - statesys.log processes messages.
+
+
+============================================================
+39. MAINTENANCE WINDOW BLOCKING INSTALLATION
+============================================================
+
+Symptoms:
+  - Required app/update not installing
+  - Deadline passed but no installation
+  - Logs mention service window
+  - Deployment waits for next window
+
+Most common root causes:
+  - Collection has restrictive maintenance window
+  - Deadline outside maintenance window
+  - Restart not allowed outside window
+  - Window too short for installation
+
+Important logs:
+  ServiceWindowManager.log
+  UpdatesDeployment.log
+  UpdatesHandler.log
+  AppEnforce.log
+
+Proven solution:
+  1. Check collection maintenance windows.
+
+  2. Confirm deployment deadline.
+
+  3. Check if option allows installation outside maintenance window.
+
+  4. Make maintenance window long enough.
+
+  5. For testing, deploy to collection without maintenance window.
+
+  6. Check ServiceWindowManager.log.
+
+Verification:
+  - Install starts during allowed window.
+  - Log shows service window available.
+
+
+============================================================
+40. RESTART / PENDING REBOOT PROBLEM
+============================================================
+
+Symptoms:
+  - Update installed but device pending restart
+  - App requires restart
+  - Next update/app does not continue
+  - Compliance stuck until reboot
+
+Most common root causes:
+  - Reboot suppressed
+  - User postponed restart
+  - Client setting allows long restart grace period
+  - Pending reboot registry state
+  - Maintenance window prevents reboot
+
+Important logs:
+  RebootCoordinator.log
+  UpdatesHandler.log
+  AppEnforce.log
+  ServiceWindowManager.log
+
+Proven solution:
+  1. Check RebootCoordinator.log.
+
+  2. Check Client Settings:
+       Computer Restart settings.
+
+  3. Confirm deployment restart behavior.
+
+  4. Reboot device manually for testing.
+
+  5. Check pending reboot registry keys if needed.
+
+  6. Make sure maintenance window allows restart.
+
+Verification:
+  - Device restarts.
+  - Compliance becomes Compliant.
+  - Pending reboot clears.
+
+
+============================================================
+41. SCCM CONSOLE SLOW OR ACCESS DENIED
+============================================================
+
+Symptoms:
+  - Console opens slowly
+  - Console crashes
+  - Access denied
+  - Objects not visible
+  - Admin cannot see deployments/collections
+
+Most common root causes:
+  - RBAC permission issue
+  - Security scope issue
+  - Console version mismatch
+  - SMS Provider issue
+  - SQL performance issue
+  - Network latency
+
+Important logs:
+  SmsAdminUI.log
+  SMSProv.log
+
+Proven solution:
+  1. Confirm console version matches site version.
+
+  2. Check user's SCCM security role.
+
+  3. Check security scopes.
+
+  4. Check collection limitation.
+
+  5. Check SmsAdminUI.log on admin machine.
+
+  6. Check SMSProv.log on SMS Provider server.
+
+  7. If console slow for everyone:
+       Check SQL performance.
+       Check SMS Provider server performance.
+
+Verification:
+  - Admin sees expected objects.
+  - Console actions complete successfully.
+
+
+============================================================
+42. REMOTE CONTROL NOT WORKING
+============================================================
+
+Symptoms:
+  - Cannot connect using SCCM Remote Control
+  - Viewer opens but connection fails
+  - Permission error
+  - Client not listening
+
+Most common root causes:
+  - Remote Tools disabled in client settings
+  - Firewall blocks remote control
+  - User permission not granted
+  - CmRcService not running
+  - Client inactive
+
+Important logs:
+  CmRcViewer.log
+  CmRcService.log
+
+Proven solution:
+  1. Check Client Settings > Remote Tools.
+
+  2. Confirm user is allowed to use Remote Control.
+
+  3. Confirm firewall rules allow remote control.
+
+  4. Check CmRcViewer.log on admin machine.
+
+  5. Check CmRcService.log on client.
+
+  6. Restart SMS Agent Host if needed.
+
+Verification:
+  - Remote Control connects successfully.
+
+
+============================================================
+43. ENDPOINT PROTECTION POLICY NOT APPLYING
+============================================================
+
+Symptoms:
+  - Defender/antimalware policy not applied
+  - Endpoint Protection status wrong
+  - Malware events not reporting
+
+Most common root causes:
+  - Policy not deployed
+  - Client setting not enabled
+  - Client not receiving policy
+  - Defender managed by another product/GPO
+  - State message issue
+
+Important logs:
+  EndpointProtectionAgent.log
+  ExternalEventAgent.log
+  StateMessage.log
+  EPCtrlMgr.log
+
+Proven solution:
+  1. Confirm Endpoint Protection client settings.
+
+  2. Confirm antimalware policy is deployed to correct collection.
+
+  3. Run Machine Policy Retrieval.
+
+  4. Check EndpointProtectionAgent.log.
+
+  5. Check if Defender is controlled by Group Policy or another security product.
+
+  6. Check ExternalEventAgent.log for malware event reporting.
+
+Verification:
+  - Policy applies.
+  - Endpoint Protection status updates.
+
+
+============================================================
+44. SITE BACKUP FAILED
+============================================================
+
+Symptoms:
+  - SCCM backup task failed
+  - No backup files created
+  - SQL backup missing
+  - Recovery files incomplete
+
+Most common root causes:
+  - Backup destination permission issue
+  - Disk full
+  - SQL backup issue
+  - VSS writer issue
+  - Network path unavailable
+
+Important logs:
+  smsbkup.log
+  smssqlbkup.log
+  Smswriter.log
+
+Proven solution:
+  1. Check smsbkup.log.
+
+  2. Confirm backup destination exists.
+
+  3. Give SCCM site server computer account write permission.
+
+  4. Check free disk space.
+
+  5. If SQL is remote, check smssqlbkup.log.
+
+  6. Check VSS writers:
+       vssadmin list writers
+
+  7. Run backup again.
+
+Verification:
+  - Backup completes successfully.
+  - Backup folder contains site backup files.
+
+
+============================================================
+45. SCCM CLIENT CACHE FULL
+============================================================
+
+Symptoms:
+  - App/update download fails
+  - Cache error in logs
+  - ccmcache folder is very large
+  - Not enough space for deployment content
+
+Most common root causes:
+  - Cache size too small
+  - Old content remains in cache
+  - Large application/update packages
+  - Multiple deployments using same client
+
+Important logs:
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+Proven solution:
+  1. Check cache:
+       Control Panel > Configuration Manager > Cache tab
+
+  2. Increase cache size if needed.
+
+  3. Delete old cache content using Configuration Manager applet.
+
+  4. Do not manually delete random ccmcache folders while installations are running.
+
+  5. For large environments, use approved cache cleanup script.
+
+Verification:
+  - New content downloads.
+  - CAS.log no longer shows cache space errors.
+
+
+============================================================
+46. QUICK MASTER CHECKLIST
+============================================================
+
+For any APP issue:
+  1. Is device/user in target collection?
+  2. Did client receive policy?
+  3. Is available time reached?
+  4. Is app visible or hidden?
+  5. Are requirements met?
+  6. Is content on DP?
+  7. Is boundary group correct?
+  8. Did download complete?
+  9. Did install command run?
+  10. Did detection pass?
+
+Logs:
+  PolicyAgent.log
+  AppIntentEval.log
+  AppDiscovery.log
+  AppEnforce.log
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+
+For any UPDATE issue:
+  1. Is update synchronized?
+  2. Is update downloaded?
+  3. Is update deployed?
+  4. Is device in collection?
+  5. Is device Required?
+  6. Is deployment active?
+  7. Is update visible in Software Center?
+  8. Did WUA scan complete?
+  9. Did content download?
+  10. Did installation finish?
+  11. Did state message report back?
+
+Logs:
+  UpdatesDeployment.log
+  UpdatesStore.log
+  WUAHandler.log
+  ScanAgent.log
+  UpdatesHandler.log
+  CAS.log
+  ContentTransferManager.log
+  StateMessage.log
+
+
+For any CONTENT issue:
+  1. Is content distributed?
+  2. Is DP healthy?
+  3. Is boundary correct?
+  4. Can client find DP?
+  5. Can client download content?
+  6. Is cache large enough?
+
+Logs:
+  distmgr.log
+  PkgXferMgr.log
+  smsdpprov.log
+  SMSdpmon.log
+  LocationServices.log
+  CAS.log
+  ContentTransferManager.log
+  DataTransferService.log
+
+
+For any CLIENT issue:
+  1. Is client installed?
+  2. Is SMS Agent Host running?
+  3. Is site code correct?
+  4. Can client find MP?
+  5. Can client download policy?
+  6. Can client send state messages?
+  7. Is client active?
+
+Logs:
+  ccmsetup.log
+  CcmExec.log
+  ClientLocation.log
+  LocationServices.log
+  PolicyAgent.log
+  CcmMessaging.log
+  ClientIDManagerStartup.log
+
+
+For any OSD/PXE issue:
+  1. Is PXE enabled on DP?
+  2. Is boot image distributed?
+  3. Is IP helper configured?
+  4. Is task sequence deployed to correct collection?
+  5. Is deployment available to PXE and boot media?
+  6. Is content distributed?
+  7. What step failed in smsts.log?
+
+Logs:
+  smspxe.log
+  smsts.log
+  CAS.log
+  ccmsetup.log
+  AppEnforce.log
+
+
+============================================================
+OFFICIAL REFERENCE TOPICS USED
+============================================================
+
+Microsoft Configuration Manager log file reference:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/log-files
+
+Deploy clients to Windows computers:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/clients/deploy/deploy-clients-to-windows-computers
+
+Track software update deployment process:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/update-management/track-software-update-deployment-process
+
+Troubleshoot software update deployments:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/update-management/troubleshoot-software-update-deployments
+
+Application deployment client components:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/app-management/understand/client-components-technical-reference
+
+Troubleshooting application deployments:
+  https://learn.microsoft.com/en-us/troubleshoot/mem/configmgr/app-management/troubleshoot/troubleshoot-application-deployment
+
+Boundary groups:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/boundary-groups
+
+Distribution points:
+  https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/install-and-configure-distribution-points
+
+
+============================================================
+END OF DOCUMENT
+============================================================
