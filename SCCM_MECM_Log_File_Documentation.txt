@@ -1,0 +1,1276 @@
+SCCM / MECM LOG FILE DOCUMENTATION
+Organized by Task / Troubleshooting Area
+Prepared for: SCCM Administration Reference
+File Type: Text Documentation
+
+============================================================
+TABLE OF CONTENTS
+============================================================
+
+01. Common Log Locations
+02. Recommended Log Reading Method
+03. Client Agent Installation / Repair
+04. Client Policy and Communication
+05. Software Center
+06. Software Update Point (SUP) Installation and Sync
+07. Software Update Deployment
+08. Application Deployment
+09. Package and Program Deployment
+10. Content Distribution / Distribution Point
+11. Boundary, MP, DP, SUP Location Issues
+12. Operating System Deployment / Task Sequence
+13. PXE Boot
+14. Inventory and Discovery
+15. Management Point
+16. Reporting Services
+17. Endpoint Protection
+18. Compliance Settings / Configuration Baseline
+19. Remote Control
+20. Site Server and Component Health
+21. Backup and Recovery
+22. Quick Troubleshooting Cheat Sheet
+23. Common Error Meaning Examples
+
+
+============================================================
+01. COMMON LOG LOCATIONS
+============================================================
+
+CLIENT LOGS:
+  C:\Windows\CCM\Logs
+
+CLIENT INSTALLATION LOGS:
+  C:\Windows\ccmsetup\Logs
+
+SITE SERVER LOGS:
+  C:\Program Files\Microsoft Configuration Manager\Logs
+
+MANAGEMENT POINT LOGS:
+  C:\Program Files\SMS_CCM\Logs
+
+WSUS / SUP LOGS:
+  %ProgramFiles%\Update Services\LogFiles
+
+TASK SEQUENCE LOG:
+  smsts.log
+
+Common smsts.log locations:
+  During WinPE:
+    X:\Windows\Temp\SMSTSLog\smsts.log
+
+  During OS installation:
+    C:\_SMSTaskSequence\Logs\Smstslog\smsts.log
+
+  After SCCM client installation:
+    C:\Windows\CCM\Logs\smsts.log
+
+  Failed task sequence:
+    C:\Windows\Temp\SMSTSLog\smsts.log
+
+
+============================================================
+02. RECOMMENDED LOG READING METHOD
+============================================================
+
+Recommended tools:
+  - CMTrace
+  - OneTrace
+  - Support Center Log File Viewer
+
+General troubleshooting order:
+  1. Check the client-side log first if the issue affects one device.
+  2. Check the server-side log if the issue affects many devices.
+  3. Search by:
+       - Application name
+       - Package ID
+       - Update KB number
+       - Assignment ID
+       - Deployment ID
+       - Error code
+       - Device name
+  4. Follow the SCCM flow:
+       Policy received
+       Evaluation / detection
+       Content location
+       Download
+       Installation
+       State message / reporting
+  5. Always check date/time difference between SCCM server and client.
+  6. Check boundary group if client cannot download content.
+  7. Do not keep verbose/debug logging enabled permanently.
+
+
+============================================================
+03. CLIENT AGENT INSTALLATION / REPAIR
+============================================================
+
+Use this section when:
+  - SCCM client is not installing
+  - Client shows "No" in console
+  - Client is inactive
+  - Configuration Manager applet is missing
+  - Software Center is missing
+  - Client push installation fails
+
+Important logs:
+
+  ccmsetup.log
+    Location: C:\Windows\ccmsetup\Logs
+    Purpose : Main SCCM client installation, repair, upgrade, uninstall log.
+
+  client.msi.log
+    Location: C:\Windows\ccmsetup\Logs
+    Purpose : MSI-level installation details.
+
+  ccmsetup-ccmeval.log
+    Location: C:\Windows\ccmsetup\Logs
+    Purpose : Client health evaluation during setup.
+
+  CcmRepair.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : SCCM client repair activity.
+
+  CcmEval.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : Client health evaluation result.
+
+  CcmEvalTask.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : Scheduled client evaluation task details.
+
+  ClientIDManagerStartup.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : Client GUID, certificate, registration, and identity.
+
+  CcmExec.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : SMS Agent Host service activity.
+
+  LocationServices.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : Finds Management Point, Distribution Point, SUP, site assignment.
+
+  ClientLocation.log
+    Location: C:\Windows\CCM\Logs
+    Purpose : Client site assignment and location.
+
+  ccm.log
+    Location: Site Server Logs
+    Purpose : Server-side client push installation activity.
+
+Troubleshooting flow:
+  Client push failed:
+    1. Check ccm.log on site server.
+    2. Check admin$ access, firewall, WMI, RPC.
+    3. Check ccmsetup.log on client.
+
+  Client installed but inactive:
+    1. Check CcmExec.log.
+    2. Check ClientIDManagerStartup.log.
+    3. Check LocationServices.log.
+    4. Check CcmMessaging.log.
+
+  Client cannot find site:
+    1. Check ClientLocation.log.
+    2. Check LocationServices.log.
+    3. Check boundary and boundary group.
+
+
+============================================================
+04. CLIENT POLICY AND COMMUNICATION
+============================================================
+
+Use this section when:
+  - Deployment not received by client
+  - Software Center empty
+  - Client policy not updating
+  - Client cannot talk to Management Point
+  - Client notification does not work
+
+Important logs:
+
+  PolicyAgent.log
+    Purpose: Downloads and processes client policy.
+
+  PolicyEvaluator.log
+    Purpose: Evaluates received policy.
+
+  CcmMessaging.log
+    Purpose: Client communication with Management Point.
+
+  LocationServices.log
+    Purpose: Finds MP, DP, SUP, and other site systems.
+
+  ClientLocation.log
+    Purpose: Site assignment and location.
+
+  CCMNotificationAgent.log
+    Purpose: Client notification actions from console.
+
+  BgbServer.log
+    Location: Management Point / Site Server
+    Purpose : Client notification server activity.
+
+  bgbmgr.log
+    Location: Site Server
+    Purpose : Client notification processing.
+
+Troubleshooting flow:
+  Deployment not received:
+    1. Run Machine Policy Retrieval & Evaluation Cycle.
+    2. Check PolicyAgent.log.
+    3. Check PolicyEvaluator.log.
+    4. Check CcmMessaging.log.
+
+  Client notification not working:
+    1. Check CCMNotificationAgent.log on client.
+    2. Check BgbServer.log.
+    3. Check bgbmgr.log.
+
+
+============================================================
+05. SOFTWARE CENTER
+============================================================
+
+Use this section when:
+  - Software Center does not open
+  - Applications are not showing
+  - Updates are not showing
+  - Install button missing
+  - Software Center shows wrong status
+
+Important logs:
+
+  SCClient_domain@username_1.log
+    Purpose: Software Center user interface activity.
+
+  SCClient_domain@username_2.log
+    Purpose: Additional Software Center UI activity.
+
+  SoftwareCenterSystemTasks.log
+    Purpose: Software Center background tasks.
+
+  PolicyAgent.log
+    Purpose: Checks if deployments are received.
+
+  AppIntentEval.log
+    Purpose: Application applicability and requirement evaluation.
+
+  AppDiscovery.log
+    Purpose: Application detection.
+
+  UpdatesDeployment.log
+    Purpose: Software update deployment evaluation.
+
+Troubleshooting flow:
+  App not showing in Software Center:
+    1. Check if device/user is in target collection.
+    2. Check deployment purpose: Available or Required.
+    3. Check User Experience visibility.
+    4. Run Machine Policy Retrieval.
+    5. Check PolicyAgent.log.
+    6. Check AppIntentEval.log.
+
+  Update not showing in Software Center:
+    1. Check if update is Required for the client.
+    2. Check deployment target collection.
+    3. Check Scheduling / Available Time.
+    4. Check User Experience visibility.
+    5. Run Software Updates Scan Cycle.
+    6. Run Software Updates Deployment Evaluation Cycle.
+    7. Check UpdatesDeployment.log and UpdatesStore.log.
+
+
+============================================================
+06. SOFTWARE UPDATE POINT (SUP) INSTALLATION AND SYNC
+============================================================
+
+Use this section when:
+  - SUP role installation fails
+  - WSUS connection fails
+  - Updates are not syncing
+  - Products/classifications are not appearing
+  - ADR does not work
+  - Updates are not downloaded
+
+Important logs:
+
+  SUPSetup.log
+    Location: Site system server
+    Purpose : Software Update Point role installation.
+
+  WCM.log
+    Location: Site Server
+    Purpose : SUP configuration, WSUS connection, products, classifications, languages.
+
+  WSUSCtrl.log
+    Location: Site system server
+    Purpose : WSUS health check and database connectivity.
+
+  wsyncmgr.log
+    Location: Site Server
+    Purpose : Software update synchronization process.
+
+  PatchDownloader.log
+    Location: Console machine or site server
+    Purpose : Downloading update binaries.
+
+  ruleengine.log
+    Location: Site Server
+    Purpose : Automatic Deployment Rule processing.
+
+  SMS_ISVUPDATES_SYNCAGENT.log
+    Location: Top-level SUP
+    Purpose : Third-party update synchronization.
+
+Troubleshooting flow:
+  SUP role not installing:
+    1. Check SUPSetup.log.
+    2. Check WSUS prerequisites.
+    3. Check WCM.log.
+
+  Updates not syncing:
+    1. Check wsyncmgr.log.
+    2. Check WCM.log.
+    3. Check WSUSCtrl.log.
+
+  Update download failed:
+    1. Check PatchDownloader.log.
+    2. Check internet/proxy/firewall.
+    3. Check deployment package source path permission.
+
+
+============================================================
+07. SOFTWARE UPDATE DEPLOYMENT
+============================================================
+
+Use this section when:
+  - Windows update does not show in Software Center
+  - Update is Required but not visible
+  - Update stuck downloading
+  - Update stuck installing
+  - Update shows Unknown in console
+  - Compliance status is wrong
+  - Update deployment not evaluated
+
+Important logs:
+
+  UpdatesDeployment.log
+    Purpose: Update deployment activation, evaluation, and enforcement.
+
+  UpdatesHandler.log
+    Purpose: Download and installation of updates.
+
+  UpdatesStore.log
+    Purpose: Update compliance status: Required, Installed, Not Required.
+
+  WUAHandler.log
+    Purpose: Windows Update Agent scan activity.
+
+  ScanAgent.log
+    Purpose: Scan request, SUP/WSUS location, scan process.
+
+  PolicyEvaluator.log
+    Purpose: Client policy evaluation.
+
+  StateMessage.log
+    Purpose: Sends update status/compliance messages to Management Point.
+
+  RebootCoordinator.log
+    Purpose: Restart coordination after update installation.
+
+  ServiceWindowManager.log
+    Purpose: Maintenance window evaluation.
+
+  CAS.log
+    Purpose: Content location and local cache.
+
+  ContentTransferManager.log
+    Purpose: Content transfer jobs.
+
+  DataTransferService.log
+    Purpose: BITS download activity.
+
+Troubleshooting flow:
+  Update not showing:
+    1. Confirm client is in target collection.
+    2. Confirm update is Required for that client.
+    3. Check deployment User Experience.
+    4. Check deployment Scheduling.
+    5. Run Machine Policy Retrieval.
+    6. Run Software Updates Scan Cycle.
+    7. Run Software Updates Deployment Evaluation Cycle.
+    8. Check UpdatesDeployment.log.
+    9. Check UpdatesStore.log.
+
+  Update scan failed:
+    1. Check WUAHandler.log.
+    2. Check ScanAgent.log.
+    3. Check WindowsUpdate.log.
+    4. Check SUP/WSUS health.
+
+  Update download failed:
+    1. Check CAS.log.
+    2. Check ContentTransferManager.log.
+    3. Check DataTransferService.log.
+    4. Check boundary group and DP.
+
+  Update install failed:
+    1. Check UpdatesHandler.log.
+    2. Check WUAHandler.log.
+    3. Check CBS.log.
+    4. Check Windows Event Viewer.
+
+Useful log messages:
+  "Assignment is still not active"
+    Meaning: Deployment exists, but available time has not reached yet.
+    Check : Deployment Scheduling tab and client/server time.
+
+  "Total actionable updates = 0"
+    Meaning: No update currently available/actionable for install.
+    Check : Required state, schedule, policy, and detection.
+
+  "Update is not required"
+    Meaning: Client scan says update does not apply.
+    Check : OS version, architecture, installed update status.
+
+
+============================================================
+08. APPLICATION DEPLOYMENT
+============================================================
+
+Use this section when:
+  - Application not showing in Software Center
+  - Application install fails
+  - Uninstall fails
+  - Detection method is wrong
+  - App installed but Software Center still shows Install
+  - Requirement rule fails
+  - Dependency/supersedence issue
+
+Important logs:
+
+  AppIntentEval.log
+    Purpose: Application requirement, dependency, supersedence, applicability.
+
+  AppDiscovery.log
+    Purpose: Application detection method result.
+
+  AppEnforce.log
+    Purpose: Actual install/uninstall command execution.
+
+  CAS.log
+    Purpose: Content cache and DP location.
+
+  ContentTransferManager.log
+    Purpose: Download job creation.
+
+  DataTransferService.log
+    Purpose: BITS download.
+
+  DCMAgent.log
+    Purpose: Application and compliance evaluation.
+
+  CIAgent.log
+    Purpose: Configuration item/application compliance process.
+
+  Ccmsdkprovider.log
+    Purpose: Application management SDK activity.
+
+Troubleshooting flow:
+  Application not showing:
+    1. Confirm collection membership.
+    2. Confirm deployment is enabled.
+    3. Confirm deployment availability time.
+    4. Run Machine Policy Retrieval.
+    5. Check PolicyAgent.log.
+    6. Check AppIntentEval.log.
+
+  Application install failed:
+    1. Check AppEnforce.log.
+    2. Check command line.
+    3. Check installation account/system context.
+    4. Check exit code.
+
+  Detection method wrong:
+    1. Check AppDiscovery.log.
+    2. Confirm detection path/registry/MSI product code.
+    3. Correct detection rule.
+
+  Content download failed:
+    1. Check CAS.log.
+    2. Check ContentTransferManager.log.
+    3. Check DataTransferService.log.
+    4. Check DP and boundary group.
+
+
+============================================================
+09. PACKAGE AND PROGRAM DEPLOYMENT
+============================================================
+
+Use this section for old SCCM Packages and Programs.
+
+Important logs:
+
+  execmgr.log
+    Purpose: Runs package/program commands.
+
+  CAS.log
+    Purpose: Content location/cache.
+
+  ContentTransferManager.log
+    Purpose: Download job.
+
+  DataTransferService.log
+    Purpose: BITS transfer.
+
+  distmgr.log
+    Location: Site Server
+    Purpose : Package creation, compression, distribution.
+
+  PkgXferMgr.log
+    Location: Site Server
+    Purpose : Package transfer to Distribution Point.
+
+Troubleshooting flow:
+  Program not running:
+    1. Check policy.
+    2. Check execmgr.log.
+    3. Check command line.
+    4. Check program run mode.
+
+  Package content missing:
+    1. Check distmgr.log.
+    2. Check PkgXferMgr.log.
+    3. Check DP status.
+
+
+============================================================
+10. CONTENT DISTRIBUTION / DISTRIBUTION POINT
+============================================================
+
+Use this section when:
+  - Content not distributed
+  - DP status failed
+  - Package stuck in progress
+  - Client cannot download content
+  - Boundary group issue
+  - Content validation failed
+
+Important logs:
+
+  distmgr.log
+    Location: Site Server
+    Purpose : Package creation, compression, DP connection, DP installation.
+
+  PkgXferMgr.log
+    Location: Site Server
+    Purpose : Transfers content from primary site to remote DP.
+
+  smsdpprov.log
+    Location: Distribution Point
+    Purpose : Extracts compressed package content on DP.
+
+  SMSdpmon.log
+    Location: Distribution Point
+    Purpose : DP health monitoring.
+
+  PullDP.log
+    Location: Pull Distribution Point
+    Purpose : Pull DP content transfer.
+
+  CAS.log
+    Location: Client
+    Purpose : Finds DP and manages local cache.
+
+  ContentTransferManager.log
+    Location: Client
+    Purpose : Content download jobs.
+
+  DataTransferService.log
+    Location: Client
+    Purpose : BITS communication.
+
+Troubleshooting flow:
+  Content not distributed to DP:
+    1. Check distmgr.log.
+    2. Check PkgXferMgr.log.
+    3. Check DP disk space.
+    4. Check DP permission and network.
+
+  Client cannot download content:
+    1. Check LocationServices.log.
+    2. Check CAS.log.
+    3. Check ContentTransferManager.log.
+    4. Check DataTransferService.log.
+    5. Check boundary group.
+
+
+============================================================
+11. BOUNDARY, MP, DP, SUP LOCATION ISSUES
+============================================================
+
+Use this section when:
+  - Client cannot find Management Point
+  - Client cannot find Distribution Point
+  - Client cannot find Software Update Point
+  - Download stuck at 0%
+  - Updates scan fails because WSUS/SUP not found
+
+Important logs:
+
+  LocationServices.log
+    Purpose: Main log for MP, DP, SUP, and site location.
+
+  ClientLocation.log
+    Purpose: Client site assignment.
+
+  CAS.log
+    Purpose: Content access and DP selection.
+
+  WUAHandler.log
+    Purpose: SUP/WSUS scan issues.
+
+  ScanAgent.log
+    Purpose: Software update scan and SUP location.
+
+Troubleshooting flow:
+  Client cannot find DP:
+    1. Check client IP subnet.
+    2. Check boundary.
+    3. Check boundary group.
+    4. Check DP assignment.
+    5. Check LocationServices.log and CAS.log.
+
+  Client cannot find SUP:
+    1. Check Software Update Point role.
+    2. Check boundary group if applicable.
+    3. Check LocationServices.log.
+    4. Check WUAHandler.log.
+
+
+============================================================
+12. OPERATING SYSTEM DEPLOYMENT / TASK SEQUENCE
+============================================================
+
+Use this section when:
+  - Task sequence fails
+  - OS image deployment fails
+  - Driver install fails
+  - Domain join fails
+  - App install fails during OSD
+  - Client install fails during OSD
+
+Important logs:
+
+  smsts.log
+    Purpose: Main task sequence log.
+
+  TSAgent.log
+    Purpose: Task sequence dependency checks before starting.
+
+  CAS.log
+    Purpose: Finds DP for task sequence content.
+
+  ccmsetup.log
+    Purpose: Client installation during OSD.
+
+  client.msi.log
+    Purpose: MSI details for SCCM client installation.
+
+  MP_ClientID.log
+    Location: Management Point
+    Purpose : MP response to PXE/boot media client identity requests.
+
+  MP_DriverManager.log
+    Location: Management Point
+    Purpose : Auto Apply Driver requests.
+
+  DriverCatalog.log
+    Location: Site Server
+    Purpose : Imported driver catalog details.
+
+  OfflineServicingMgr.log
+    Location: Site Server
+    Purpose : Offline servicing of WIM images.
+
+  Dism.log
+    Purpose: Driver/update servicing.
+
+  scanstate.log
+    Purpose: USMT capture.
+
+  loadstate.log
+    Purpose: USMT restore.
+
+Troubleshooting flow:
+  Task sequence failed:
+    1. Open smsts.log.
+    2. Search "error", "failed", and "return code".
+    3. Check the step name.
+    4. Check content access if error is download-related.
+    5. Check AppEnforce.log if application installation step failed.
+
+  Domain join failed:
+    1. Check smsts.log.
+    2. Check NetSetup.log.
+    3. Check domain account permission.
+    4. Check DNS and network.
+
+  Driver issue:
+    1. Check smsts.log.
+    2. Check MP_DriverManager.log.
+    3. Check Dism.log.
+
+
+============================================================
+13. PXE BOOT
+============================================================
+
+Use this section when:
+  - PXE boot does not start
+  - Device receives no boot image
+  - PXE says no advertisement
+  - PXE loops
+  - Unknown computer support issue
+
+Important logs:
+
+  smspxe.log
+    Location: PXE-enabled Distribution Point
+    Purpose : PXE boot requests and responses.
+
+  MP_ClientID.log
+    Location: Management Point
+    Purpose : Client identity lookup.
+
+  SMSPXE.log / smspxe.log
+    Purpose: PXE service activity depending on version/configuration.
+
+Troubleshooting flow:
+  PXE not responding:
+    1. Check IP helper / DHCP options.
+    2. Check WDS/PXE responder service.
+    3. Check smspxe.log.
+
+  No task sequence found:
+    1. Check smspxe.log.
+    2. Check collection deployment.
+    3. Check device imported/unknown support.
+    4. Check task sequence deployment availability.
+
+
+============================================================
+14. INVENTORY AND DISCOVERY
+============================================================
+
+Use this section when:
+  - Hardware inventory missing
+  - Software inventory missing
+  - Device not showing correctly
+  - AD discovery not working
+  - Heartbeat discovery not updating
+
+Important logs:
+
+  InventoryAgent.log
+    Location: Client
+    Purpose : Hardware inventory, software inventory, heartbeat discovery.
+
+  InventoryProvider.log
+    Location: Client
+    Purpose : Detailed inventory provider activity.
+
+  AssetAdvisor.log
+    Location: Client
+    Purpose : Asset Intelligence inventory.
+
+  dataldr.log
+    Location: Site Server
+    Purpose : Processes hardware inventory MIF files.
+
+  sinvproc.log
+    Location: Site Server
+    Purpose : Processes software inventory.
+
+  ddm.log
+    Location: Site Server
+    Purpose : Discovery Data Manager.
+
+  adsysdis.log
+    Location: Site Server
+    Purpose : Active Directory System Discovery.
+
+  adusrdis.log
+    Location: Site Server
+    Purpose : Active Directory User Discovery.
+
+  adsgdis.log
+    Location: Site Server
+    Purpose : Active Directory Group Discovery.
+
+  ADForestDisc.log
+    Location: Site Server
+    Purpose : Active Directory Forest Discovery.
+
+Troubleshooting flow:
+  Hardware inventory missing:
+    1. Run Hardware Inventory Cycle.
+    2. Check InventoryAgent.log.
+    3. Check dataldr.log on server.
+
+  Software inventory missing:
+    1. Run Software Inventory Cycle.
+    2. Check InventoryAgent.log.
+    3. Check sinvproc.log.
+
+  AD discovery issue:
+    1. Check relevant AD discovery log.
+    2. Check LDAP path.
+    3. Check discovery account permission.
+    4. Check ddm.log.
+
+
+============================================================
+15. MANAGEMENT POINT
+============================================================
+
+Use this section when:
+  - Clients cannot register
+  - Clients cannot download policy
+  - Clients cannot send inventory/status
+  - MP role health is critical
+  - MP installation fails
+
+Important logs:
+
+  MPSetup.log
+    Purpose: Management Point installation.
+
+  MPMSI.log
+    Purpose: MSI details for MP installation.
+
+  MPControl.log
+    Purpose: Management Point health check.
+
+  MP_ClientID.log
+    Purpose: Client identity requests.
+
+  MP_Ddr.log
+    Purpose: Discovery data records from clients.
+
+  MP_Hinv.log
+    Purpose: Hardware inventory from clients.
+
+  MP_Sinv.log
+    Purpose: Software inventory from clients.
+
+  MP_Status.log
+    Purpose: Client status messages.
+
+  MP_Location.log
+    Purpose: Location requests from clients.
+
+  MP_Policy.log
+    Purpose: Policy requests from clients.
+
+Troubleshooting flow:
+  MP unhealthy:
+    1. Check MPControl.log.
+    2. Check IIS.
+    3. Check site component status.
+    4. Check MPSetup.log and MPMSI.log if newly installed.
+
+  Client cannot get policy:
+    1. Check client PolicyAgent.log.
+    2. Check client CcmMessaging.log.
+    3. Check MP_Policy.log on MP.
+    4. Check IIS logs.
+
+
+============================================================
+16. REPORTING SERVICES
+============================================================
+
+Use this section when:
+  - Reports do not open
+  - Reporting Services Point install fails
+  - Report access denied
+  - RBAC issue
+  - Report data missing
+
+Important logs:
+
+  srsrpsetup.log
+    Purpose: Reporting Services Point setup.
+
+  srsrpMSI.log
+    Purpose: MSI install details for reporting point.
+
+  srsrp.log
+    Purpose: Reporting Services Point activity/status.
+
+  SCCMReporting.log
+    Purpose: RBAC checks and report loading.
+
+Troubleshooting flow:
+  Reporting point install failed:
+    1. Check srsrpsetup.log.
+    2. Check srsrpMSI.log.
+    3. Check SQL Reporting Services configuration.
+
+  Report access issue:
+    1. Check SCCMReporting.log.
+    2. Check SCCM security role.
+    3. Check SSRS permission.
+
+
+============================================================
+17. ENDPOINT PROTECTION
+============================================================
+
+Use this section when:
+  - Antimalware policy not applied
+  - Malware events not reporting
+  - Endpoint Protection role issue
+  - Defender policy issue
+
+Important logs:
+
+  EndpointProtectionAgent.log
+    Location: Client
+    Purpose : Endpoint Protection client and policy application.
+
+  ExternalEventAgent.log
+    Location: Client
+    Purpose : Malware detection history and client status events.
+
+  EPCtrlMgr.log
+    Location: Site Server
+    Purpose : Malware threat info sync to SCCM database.
+
+  EPMgr.log
+    Location: Site Server
+    Purpose : Endpoint Protection role status.
+
+  EPSetup.log
+    Location: Site Server
+    Purpose : Endpoint Protection role installation.
+
+Troubleshooting flow:
+  Antimalware policy not applied:
+    1. Check EndpointProtectionAgent.log.
+    2. Check policy deployment.
+    3. Check client settings.
+
+  Malware event not reporting:
+    1. Check ExternalEventAgent.log.
+    2. Check StateMessage.log.
+    3. Check EPCtrlMgr.log.
+
+
+============================================================
+18. COMPLIANCE SETTINGS / CONFIGURATION BASELINE
+============================================================
+
+Use this section when:
+  - Configuration baseline not evaluating
+  - Compliance status wrong
+  - Remediation not running
+  - Configuration item fails
+
+Important logs:
+
+  CIAgent.log
+    Purpose: Compliance/remediation for CIs, applications, updates.
+
+  DCMAgent.log
+    Purpose: High-level configuration item evaluation.
+
+  CITaskManager.log
+    Purpose: Configuration item task scheduling.
+
+  DCMReporting.log
+    Purpose: Reporting compliance result.
+
+  DcmWmiProvider.log
+    Purpose: Reads CI synclets from WMI.
+
+Troubleshooting flow:
+  Baseline not evaluating:
+    1. Run Machine Policy Retrieval.
+    2. Run Compliance Evaluation Cycle.
+    3. Check DCMAgent.log.
+    4. Check CIAgent.log.
+
+  Remediation not working:
+    1. Check baseline remediation setting.
+    2. Check DCMAgent.log.
+    3. Check scripts and permissions.
+
+
+============================================================
+19. REMOTE CONTROL
+============================================================
+
+Use this section when:
+  - SCCM Remote Control cannot connect
+  - Viewer fails
+  - Remote control service issue
+
+Important logs:
+
+  CmRcViewer.log
+    Location: Admin machine %temp%
+    Purpose : Remote Control viewer activity.
+
+  CmRcService.log
+    Location: Client log folder
+    Purpose : Remote Control service activity.
+
+Troubleshooting flow:
+  Remote control cannot connect:
+    1. Check client settings for Remote Tools.
+    2. Check firewall.
+    3. Check CmRcViewer.log.
+    4. Check CmRcService.log.
+
+
+============================================================
+20. SITE SERVER AND COMPONENT HEALTH
+============================================================
+
+Use this section when:
+  - Site component is critical
+  - SMS Executive service issue
+  - Database processing delayed
+  - Console action fails
+  - Site configuration problem
+
+Important logs:
+
+  smsexec.log
+    Purpose: SMS Executive component threads.
+
+  sitecomp.log
+    Purpose: Site component installation/reinstallation.
+
+  hman.log
+    Purpose: Hierarchy Manager, site configuration, AD publishing.
+
+  smsdbmon.log
+    Purpose: Database change monitoring.
+
+  statesys.log
+    Purpose: State message processing.
+
+  statmgr.log
+    Purpose: Status message writing.
+
+  SMSProv.log
+    Purpose: SMS Provider access to site database.
+
+  SmsAdminUI.log
+    Location: Console machine
+    Purpose : SCCM console activity.
+
+Troubleshooting flow:
+  Console error:
+    1. Check SmsAdminUI.log.
+    2. Check SMSProv.log.
+    3. Check RBAC and WMI.
+
+  State messages not updating:
+    1. Check StateMessage.log on client.
+    2. Check MP_Status.log.
+    3. Check statesys.log.
+
+  Component critical:
+    1. Check Monitoring > System Status.
+    2. Identify component.
+    3. Check component-specific log.
+    4. Check smsexec.log.
+
+
+============================================================
+21. BACKUP AND RECOVERY
+============================================================
+
+Use this section when:
+  - SCCM site backup fails
+  - SQL backup issue
+  - Site recovery running
+  - VSS writer issue
+
+Important logs:
+
+  smsbkup.log
+    Location: Site Server
+    Purpose : Site backup activity.
+
+  smssqlbkup.log
+    Location: SQL Server
+    Purpose : SQL database backup when SQL is remote.
+
+  Smswriter.log
+    Location: Site Server
+    Purpose : Configuration Manager VSS writer.
+
+  ConfigMgrSetup.log
+    Location: Site Server
+    Purpose : Setup and site recovery tasks.
+
+Troubleshooting flow:
+  Site backup failed:
+    1. Check smsbkup.log.
+    2. Check backup destination permission.
+    3. Check SQL backup.
+    4. Check disk space.
+
+  Recovery issue:
+    1. Check ConfigMgrSetup.log.
+    2. Check SQL database restore.
+    3. Check site code and prerequisites.
+
+
+============================================================
+22. QUICK TROUBLESHOOTING CHEAT SHEET
+============================================================
+
+Issue                                      First Log                         Then Check
+-------------------------------------------------------------------------------------------------
+Client install failed                      ccmsetup.log                      client.msi.log, ccm.log
+Client push failed                         ccm.log                           ccmsetup.log
+Client inactive                            CcmExec.log                       ClientIDManagerStartup.log
+Client cannot find MP                      LocationServices.log              ClientLocation.log
+Software Center empty                      PolicyAgent.log                   SCClient logs
+App not showing                            AppIntentEval.log                 PolicyAgent.log
+App install failed                         AppEnforce.log                    Command line / exit code
+App detection wrong                        AppDiscovery.log                  Detection method
+Package/program failed                     execmgr.log                       CAS.log
+Update not showing                         UpdatesDeployment.log             UpdatesStore.log
+Update scan failed                         WUAHandler.log                    ScanAgent.log
+Update download failed                     CAS.log                           ContentTransferManager.log
+Update install failed                      UpdatesHandler.log                CBS.log
+SUP role install failed                    SUPSetup.log                      WCM.log
+SUP sync failed                            wsyncmgr.log                      WSUSCtrl.log
+ADR issue                                  ruleengine.log                    wsyncmgr.log
+Content distribution failed                distmgr.log                       PkgXferMgr.log
+Remote DP issue                            smsdpprov.log                     SMSdpmon.log
+Client cannot find DP                      LocationServices.log              CAS.log
+PXE boot failed                            smspxe.log                        DHCP/IP helper/WDS/PXE responder
+Task sequence failed                       smsts.log                         CAS.log / AppEnforce.log
+Driver issue in OSD                        smsts.log                         MP_DriverManager.log / Dism.log
+Inventory missing                          InventoryAgent.log                dataldr.log
+AD System Discovery failed                 adsysdis.log                      ddm.log
+Report not opening                         srsrp.log                         SCCMReporting.log
+MP unhealthy                               MPControl.log                     MPSetup.log / MPMSI.log
+Compliance baseline issue                  DCMAgent.log                      CIAgent.log
+Remote control failed                      CmRcViewer.log                    CmRcService.log
+Endpoint Protection issue                  EndpointProtectionAgent.log        ExternalEventAgent.log
+Console issue                              SmsAdminUI.log                    SMSProv.log
+State message issue                        StateMessage.log                  statesys.log
+Backup failed                              smsbkup.log                       smssqlbkup.log
+
+
+============================================================
+23. COMMON ERROR MEANING EXAMPLES
+============================================================
+
+ERROR / MESSAGE:
+  Assignment is still not active
+
+MEANING:
+  The deployment policy is received, but the deployment available time has not arrived.
+
+CHECK:
+  - Deployment Scheduling tab
+  - Software available time
+  - Client local time
+  - Server time
+  - Time zone
+
+
+ERROR / MESSAGE:
+  Total actionable updates = 0
+
+MEANING:
+  Client has no update currently available for install.
+
+CHECK:
+  - Is the update Required?
+  - Is deployment active?
+  - Is update already installed?
+  - Is scan successful?
+  - Is policy received?
+
+
+ERROR / MESSAGE:
+  Failed to get targeted update
+
+MEANING:
+  Client cannot find or evaluate the targeted update CI correctly.
+
+CHECK:
+  - UpdatesDeployment.log
+  - UpdatesStore.log
+  - WUAHandler.log
+  - Software update scan
+  - SUP sync status
+
+
+ERROR / MESSAGE:
+  Content location request failed
+
+MEANING:
+  Client cannot find valid DP/content location.
+
+CHECK:
+  - Boundary
+  - Boundary Group
+  - DP content status
+  - LocationServices.log
+  - CAS.log
+
+
+ERROR / MESSAGE:
+  Detection method failed
+
+MEANING:
+  SCCM cannot confirm whether the application is installed.
+
+CHECK:
+  - AppDiscovery.log
+  - Detection method rule
+  - File path / registry key / MSI product code
+
+
+ERROR / MESSAGE:
+  Exit code 1603
+
+MEANING:
+  Generic MSI installation failure.
+
+CHECK:
+  - AppEnforce.log
+  - MSI log
+  - Installation command
+  - Admin rights
+  - Prerequisites
+
+
+ERROR / MESSAGE:
+  Exit code 3010
+
+MEANING:
+  Installation successful, restart required.
+
+CHECK:
+  - AppEnforce.log
+  - RebootCoordinator.log
+  - Deployment restart behavior
+
+
+============================================================
+END OF DOCUMENT
+============================================================
