@@ -1,0 +1,127 @@
+OSD Deploy By SCCM
+1. PXE Enable in DP
+2. Deploy x64 boot image in DP.
+3. Need install.wim file
+4. Add install.wim file in operating system image file and Deploy in DP.
+5. Create a Task Sequence and Deploy in DP.
+6. Check From a client machine your deployment is correct.
+
+Network:10.10.10.0/24
+dc01.domin.com=10.10.10.110
+sccm.domain.com=10.10.10.120
+Boundary:10.10.10.2-10.10.10.254
+Create Boundary Group:OSD-BG-10.10.10.0
+Add Boundary: 10.10.10.2-10.10.10.254
+Ensure DP and MP are available for this boundary group or boundary 
+
+#Must have a DHCP server for this network.(router, windows server. make sure sccm or other server ip not provide by dhcp)
+User must get dns (10.10.10.110) by dhcp. and geting ping dc01.
+
+#Add The Network Access Account (NAA)
+	>Open the SCCM Console. Navigate to Administration > Overview > Site Configuration > Sites. 
+	>Select your primary site, then click Configure Site Components > Software Distribution on the ribbon. Go to the Network Access Account tab, specify the account, enter the credentials, and verify it works before saving
+
+
+#1. PXE Enable in DP
+	1. Administration>Site>Site Role> DP Properties>
+		*Check "enable PXE support for clients"
+		* allow this distribution point to respond to incoming PXE Request
+		* enable unknown computer support
+		* enable A PXE responder without windows Deployment service 
+
+#2. Deploy x64 boot image in DP.
+	1.Software Library>Operating System>Boot Images> Right click of both image x64 and enable command support from Customize.
+	2. make sure check in enable "deploy this boot image form pxe enable distribution point" it enable cmd in winpe by F8
+	2. Then deploy both images to DP or Update DP if already deployed.
+
+###3. Need install.wim file (Assume you have captured install.wim file if you have not install.wim i add this at last)####
+
+#4. Add install.wim file in operating system image file and Deploy in DP.
+	1. share install.wim from a folder. make sure everyone has access permission.
+	2. Software Library>Operating System>opareting system image
+	3. Right click> add oparating system image>Use UNC Path and complete the prcess.
+	3. after add distribute contant. right click on image>distribute contant>add DP and complete process.
+
+5. Create a Task Sequence and Deploy to all unkonwn computer.
+	1. Software Library>Operating System>Task Sequances
+	2. select install existing image package
+	3. give name and select boot image x64 
+	4. install window: select newly added image(intall.wim) [check partion,configure task, randomly ganarate.]
+	5. configure network window: join domain if you want. give browse domain and give a user with domain join rihgts
+	6. install client configure package. as it is. if you change location of client package than browse location.
+	7. system migration window: unchek everything in this window.
+	8. update window: select donot install any update 
+	9. install application: add your deployed application if you want. otherwise click next. and complete process.
+	* After create deploy in all unkonwn computer. 
+		>right click on created task sequence
+		>click deploy
+		>select collection "all unkonwn computer"
+		>select available and only media and PXE from bellow
+		>don't check schedule if uncheck it deploy as soon as possible. (now)
+		>user experience by default. next all by default and complete process.
+
+6. Check From a client machine your deployment is correct.
+	1. create a vm (don't add any bootable media) or boot a client pc by network.
+	2. Notice it get ip from dhcp server. if not getting IP you have a issue with network or PXE enable. (stay same network. check smspxe.log)
+	3. getting ip but reboot after windows setting window or not appear Task sequence window. press f8 during winpe window. and check ip and dns. and ping sccm server. if getting other dns without dc or not ping sccm server it will not work. check dhcp server. if dns and ip is okay check Task sequence deploy properly (all unknown computer. clear pxe form all unknown computer)
+	4. it will work.
+
+
+#3. Need install.wim file [make install.wim fie form reference pc]
+	3.1. create a capture iso.
+		*Software Library>Operating System>Task Sequances media
+		*Select capture media
+		*select cd/dvd media type. give a name and browse a location for save capture media iso. check autorun.inf file on capture media.
+		*Select boot imgae and distribution point. if not found fist distribute boot image. follow setp 2.
+		*complete the process.
+	3.2. make a reference pc in hyper-v and install all need software. than mount boot capture boot image (dont use from refarence pc hdd location). mount as like window instalation iso
+	3.3. double click on mounted iso or opent iso. then click lounch. (here you will get lot of error.) follow to fix them.
+	3.3.1. 1st error form lounch window. 0x000000B7. cause Sysprep failing because Store/Appx packages. remove all sotre app. roun script as powershell admin
+# Remove AppX packages for all existing users
+Get-AppxPackage -AllUsers |
+Where-Object {
+    $_.Name -notmatch "Microsoft.DesktopAppInstaller|Microsoft.StorePurchaseApp|Microsoft.WindowsStore|Microsoft.VCLibs|Microsoft.UI.Xaml|Microsoft.NET.Native|Microsoft.SecHealthUI"
+} |
+ForEach-Object {
+    try {
+        Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Stop
+        Write-Host "Removed: $($_.Name)"
+    }
+    catch {
+        Write-Warning "Failed: $($_.Name)"
+    }
+}
+
+
+3.3.1. *delete log from sysprep. 2 log file file in window>system32>sysprep.
+	* stop process
+taskkill /f /im TsmBootstrap.exe
+taskkill /f /im TSProgressUI.exe
+taskkill /f /im TsManager.exe
+taskkill /f /im smsts.exe
+
+	* delete creted folder by capture image iso.
+rd /s /q C:\_SMSTaskSequence
+rd /s /q C:\MININT
+rd /s /q C:\SMSTSLog
+del /f /q C:\Windows\Temp\*.* 
+#note: her you got an issu to delete folder then try bellow replace issue folder name. here is example.
+takeown /f C:\_SmsTsWinPE /r /d y
+icacls C:\_SmsTsWinPE /grant Administrators:F /t
+attrib -r -h -s C:\_SmsTsWinPE /s /d
+rd /s /q C:\_SmsTsWinPE
+
+#than reboot. pc and run capture iso agin.
+
+	3.3.1. 2nd error "Unable to read task sequence configuration" after run sysprep and reboot pc.
+* this issu occours if you mount capture iso form hdd of reference pc. so use captue iso like windows installtion. hyperv: machine setting>cd/dvd>add iso.
+*windows drive "c" not mount automatic after reboot. (if use wmware you face this). so you hyper-v. dont try make install.wim like this.
+you can make instal.wim file with dism. check youtube for make that. in this process you can mount windows drive"c" than run capture install.wim by cmd.
+
+
+
+
+
+
+	
+
