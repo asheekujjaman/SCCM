@@ -615,7 +615,7 @@ The site may initially show:
 
     Pending
 
-This is normal. wait unitil complite.
+This is normal. Wait until it is complete. After completing, it takes a long time in the SCCM2 server for the console.
 
 ======================================================================
 PHASE 20 - MONITOR INSTALLATION
