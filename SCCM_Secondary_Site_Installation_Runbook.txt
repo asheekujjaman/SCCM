@@ -1,0 +1,1202 @@
+SCCM SECONDARY SITE INSTALLATION RUNBOOK
+========================================
+
+Document Title:
+Complete Step-by-Step Installation of an SCCM Secondary Site
+
+Prepared For:
+LAB Environment
+
+Environment Summary
+-------------------
+Domain Controller / DNS:
+    FQDN: dc01.lab.com
+    IP:   10.10.10.110
+
+Primary SCCM Site Server:
+    FQDN: sccm.lab.com
+    IP:   10.10.10.120
+
+Secondary SCCM Site Server:
+    FQDN: sccm2.lab.com
+    IP:   192.168.1.140
+
+Recommended Secondary Site Settings:
+    Site Code:                S02
+    Site Name:                Branch Secondary Site
+    SQL Server Port:          TCP 1433
+    SQL Service Broker Port:  TCP 4022
+    SQL Installation:         SQL Server Express
+    Installation Source:      Copy from parent primary site
+    Client Site Assignment:   Parent primary site code
+
+IMPORTANT NOTES
+---------------
+1. A secondary site must be installed from the Configuration Manager console connected to the parent primary site.
+2. Clients cannot be assigned directly to a secondary site.
+3. Clients in the 192.168.1.0/24 network must remain assigned to the parent primary site code.
+4. The boundary group will direct clients to the local management point and distribution point on sccm2.lab.com.
+5. TCP 1433 is the SQL database engine port.
+6. TCP 4022 is the SQL Service Broker port.
+7. The primary site server computer account LAB\SCCM$ must be a local administrator on sccm2.lab.com.
+8. Both LAB\SCCM$ and LAB\SCCM2$ should have Full Control permissions on the Active Directory System Management container.
+9. If it is sccm verison 2503 or later insall Install the Microsoft ODBC driver 18 for SQL setup (msodbcsql) from https://go.microsoft.com/fwlink/?linkid=2299909.
+
+======================================================================
+PHASE 1 - VERIFY THE PRIMARY SCCM SITE
+======================================================================
+On sccm.lab.com, open:
+    Configuration Manager Console
+        Administration
+            Site Configuration
+                Sites
+
+Record the following:
+    Primary Site Code: ____________________
+    Configuration Manager Version: ________
+    Build Number: _________________________
+
+Confirm:
+    Site Status: Active
+    Site Component Status: Healthy
+    Database Replication: Healthy
+    No update, recovery, or repair is currently running
+
+In this document, PRI is used as an example primary site code. Replace PRI with your actual primary site code.
+
+======================================================================
+PHASE 2 - VERIFY ROUTING BETWEEN THE NETWORKS
+======================================================================
+Required network path:
+    10.10.10.0/24
+          |
+          | Router or Layer-3 Firewall
+          |
+    192.168.1.0/24
+Routing must work in both directions.
+From sccm.lab.com, run:
+    Resolve-DnsName sccm2.lab.com
+    Test-Connection sccm2.lab.com -Count 2
+    Test-NetConnection sccm2.lab.com -Port 445
+    Test-NetConnection sccm2.lab.com -Port 135
+    tracert sccm2.lab.com
+Expected DNS result:
+    sccm2.lab.com -> 192.168.1.140
+From sccm2.lab.com, run:
+    Resolve-DnsName dc01.lab.com
+    Resolve-DnsName sccm.lab.com
+    Test-Connection dc01.lab.com -Count 2
+    Test-Connection sccm.lab.com -Count 2
+    Test-NetConnection sccm.lab.com -Port 445
+    Test-NetConnection sccm.lab.com -Port 135
+    Test-NetConnection sccm.lab.com -Port 1433
+    Test-NetConnection sccm.lab.com -Port 4022
+    tracert sccm.lab.com
+If the primary SCCM database is installed on another SQL server, test ports 1433 and 4022 against that SQL server instead.
+
+======================================================================
+PHASE 3 - CONFIGURE DNS
+======================================================================
+The secondary site server must use the domain controller as its DNS server.
+On sccm2.lab.com:
+Configure DNS:Set Primary DNS:10.10.10.110
+Clear and register DNS:
+    Clear-DnsClientCache
+    ipconfig /registerdns
+Verify:
+    Resolve-DnsName dc01.lab.com
+    Resolve-DnsName sccm.lab.com
+    Resolve-DnsName sccm2.lab.com
+Do not configure a public DNS server directly on the domain-joined SCCM2 network adapter.
+
+======================================================================
+PHASE 4 - JOIN SCCM2 TO THE DOMAIN
+======================================================================
+
+On sccm2.lab.com: jonin sccm2 server to domain. From Run type sysdm.cpl click change and add your domain and server name.
+
+======================================================================
+PHASE 5 - VERIFY TIME SYNCHRONIZATION
+======================================================================
+
+On sccm2.lab.com: Ensure all server in same time zone. and time is same.
+The time source should normally be the Active Directory domain hierarchy.
+Ensure the date and time closely match dc01.lab.com and sccm.lab.com.
+
+======================================================================
+PHASE 6 - PREPARE ACTIVE DIRECTORY PUBLISHING
+======================================================================
+Open ADSI Edit on dc01.lab.com.
+Connect to:
+    Default Naming Context
+Navigate to:
+    DC=lab,DC=com
+        CN=System
+            CN=System Management
+If the System Management container does not exist: it exist because. you have allready create primary site.
+    1. Right-click CN=System
+    2. Select New
+    3. Select Object
+    4. Select container
+    5. Enter: System Management
+Grant permissions to:
+    LAB\SCCM$
+    LAB\SCCM2$
+Permission:
+    Full Control
+Apply to:
+    This object and all descendant objects
+Important:
+    In the Security dialog, click Object Types and enable Computers before searching for SCCM$ and SCCM2$.
+
+======================================================================
+PHASE 7 - ADD THE PRIMARY SCCM COMPUTER ACCOUNT TO SCCM2 ADMINISTRATORS
+======================================================================
+On sccm2.lab.com, open user and groups than click group select administrator add primary sccm server computer. or run:
+    Add-LocalGroupMember `
+        -Group "Administrators" `
+        -Member 'LAB\SCCM$'
+
+======================================================================
+PHASE 8 - CONFIRM SCCM2 IS CLEAN
+======================================================================
+Dont use pc that already install sccm client or other sccm service. if intall first uninstall or clean those.
+
+Run on sccm2.lab.com:
+
+    Get-Service SMS_EXECUTIVE -ErrorAction SilentlyContinue
+    Get-Service SMS_SITE_COMPONENT_MANAGER -ErrorAction SilentlyContinue
+    Get-Service CcmExec -ErrorAction SilentlyContinue
+
+    Get-Service |
+        Where-Object Name -Like "MSSQL*" |
+        Select-Object Name, DisplayName, Status
+
+For a clean secondary site installation:
+
+    SMS_EXECUTIVE should not exist
+    SMS_SITE_COMPONENT_MANAGER should not exist
+    No unrelated SQL instance should be present
+
+If the Configuration Manager client is installed:
+
+    if (Test-Path "C:\Windows\ccmsetup\ccmsetup.exe") {
+        Start-Process `
+            "C:\Windows\ccmsetup\ccmsetup.exe" `
+            -ArgumentList "/uninstall" `
+            -Wait
+    }
+
+Restart:
+
+    Restart-Computer
+
+If SCCM2 is already configured as a distribution point or another site system, remove those roles and the site-system object before installing it as a secondary site.
+
+======================================================================
+PHASE 9 - PREPARE STORAGE [not Requied you can install in c]
+======================================================================
+Recommended lab resources:
+    CPU:                    4 virtual processors
+    RAM:                    8 to 12 GB
+    OS Disk:                80 GB
+    Content Disk:           100 GB or more
+    Recommended Free Space: 40 GB or more
+Recommended drive layout:
+    C: Windows and temporary setup files
+    D: Configuration Manager and content library
+Recommended installation path:
+    D:\Microsoft Configuration Manager
+Recommended content locations:
+    Content Library Drive: D:
+    Package Share Drive:   D:
+    Reserved Free Space:   10240 MB
+
+======================================================================
+PHASE 10 - INSTALL WINDOWS SERVER PREREQUISITES
+======================================================================
+On sccm2.lab.com, run PowerShell as Administrator:
+    $Features = @(
+        "NET-Framework-Core",
+        "RDC",
+        "BITS",
+        "BITS-IIS-Ext",
+        "Web-Server",
+        "Web-ISAPI-Ext",
+        "Web-Windows-Auth",
+        "Web-Metabase",
+        "Web-WMI",
+        "Web-Mgmt-Console"
+    )
+
+    $result = Install-WindowsFeature `
+        -Name $Features `
+        -IncludeManagementTools
+
+    $result |
+        Select-Object Success, RestartNeeded, ExitCode, FeatureResult
+
+If .NET Framework 3.5 installation fails, mount the matching Windows Server ISO.
+
+Assuming the ISO is mounted as E:
+    Install-WindowsFeature `
+        -Name NET-Framework-Core `
+        -Source "E:\sources\sxs"
+
+Verify installed features:
+    Get-WindowsFeature `
+        NET-Framework-Core,
+        RDC,
+        BITS,
+        BITS-IIS-Ext,
+        Web-Server,
+        Web-ISAPI-Ext,
+        Web-Windows-Auth,
+        Web-Metabase,
+        Web-WMI |
+        Format-Table Name, InstallState
+
+All required items should show:
+    Installed
+
+Restart:
+    Restart-Computer
+
+======================================================================
+PHASE 11 - VERIFY .NET FRAMEWORK 4.X
+======================================================================
+
+Run:
+
+    $DotNet = Get-ItemProperty `
+        "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" `
+        -ErrorAction Stop
+
+    $DotNet |
+        Select-Object Release, Version
+
+Recommended:
+
+    .NET Framework 4.8
+
+Verify .NET Framework 3.5:
+
+    Get-WindowsFeature NET-Framework-Core
+
+======================================================================
+PHASE 12 - INSTALL OR VERIFY MICROSOFT ODBC DRIVER 18
+======================================================================
+Install the Microsoft ODBC driver 18 for SQL setup (msodbcsql) from https://go.microsoft.com/fwlink/?linkid=2299909
+
+======================================================================
+PHASE 13 - ENABLE REMOTE REGISTRY DURING INSTALLATION
+======================================================================
+On sccm2.lab.com:
+    Set-Service RemoteRegistry -StartupType Manual
+    Start-Service RemoteRegistry
+    Get-Service RemoteRegistry
+
+Expected:
+    Status: Running
+
+======================================================================
+PHASE 14 - CONFIGURE WINDOWS FIREWALL
+======================================================================
+disable firewall or add those port in firewall.
+Create this helper function on both SCCM servers:
+
+    function Add-CMFirewallRule {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Name,
+
+            [Parameter(Mandatory)]
+            [string]$LocalPort,
+
+            [Parameter(Mandatory)]
+            [string]$RemoteAddress
+        )
+
+        if (-not (Get-NetFirewallRule -DisplayName $Name -ErrorAction SilentlyContinue)) {
+            New-NetFirewallRule `
+                -DisplayName $Name `
+                -Direction Inbound `
+                -Action Allow `
+                -Protocol TCP `
+                -LocalPort $LocalPort `
+                -RemoteAddress $RemoteAddress `
+                -Profile Domain
+        }
+    }
+
+Run on sccm.lab.com:
+
+    $SecondaryIP = "192.168.1.140"
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Secondary - SQL 1433" `
+        -LocalPort "1433" `
+        -RemoteAddress $SecondaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Secondary - SQL Broker 4022" `
+        -LocalPort "4022" `
+        -RemoteAddress $SecondaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Secondary - SMB 445" `
+        -LocalPort "445" `
+        -RemoteAddress $SecondaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Secondary - RPC 135" `
+        -LocalPort "135" `
+        -RemoteAddress $SecondaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Secondary - Dynamic RPC" `
+        -LocalPort "49152-65535" `
+        -RemoteAddress $SecondaryIP
+
+Run on sccm2.lab.com:
+
+    $PrimaryIP = "10.10.10.120"
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Primary - SQL 1433" `
+        -LocalPort "1433" `
+        -RemoteAddress $PrimaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Primary - SQL Broker 4022" `
+        -LocalPort "4022" `
+        -RemoteAddress $PrimaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Primary - SMB 445" `
+        -LocalPort "445" `
+        -RemoteAddress $PrimaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Primary - RPC 135" `
+        -LocalPort "135" `
+        -RemoteAddress $PrimaryIP
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Primary - Dynamic RPC" `
+        -LocalPort "49152-65535" `
+        -RemoteAddress $PrimaryIP
+
+For Enhanced HTTP branch clients:
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Clients - HTTP 80" `
+        -LocalPort "80" `
+        -RemoteAddress "192.168.1.0/24"
+
+For HTTPS branch clients:
+
+    Add-CMFirewallRule `
+        -Name "ConfigMgr Clients - HTTPS 443" `
+        -LocalPort "443" `
+        -RemoteAddress "192.168.1.0/24"
+
+Required site-to-site ports:
+
+    TCP 445           SMB
+    TCP 135           RPC Endpoint Mapper
+    TCP 49152-65535   Dynamic RPC
+    TCP 1433          SQL Server
+    TCP 4022          SQL Service Broker
+
+Required SCCM2-to-domain-controller connectivity:
+
+    TCP/UDP 53        DNS
+    TCP/UDP 88        Kerberos
+    TCP/UDP 389       LDAP
+    TCP 636           LDAPS, if used
+    TCP 3268          Global Catalog
+    TCP 445           SMB
+    TCP 135           RPC
+    TCP 49152-65535   Dynamic RPC
+    UDP 123           Time synchronization
+
+Also configure the router or network firewall between the two subnets.
+
+======================================================================
+PHASE 15 - VERIFY ENHANCED HTTP OR HTTPS
+======================================================================
+
+On sccm.lab.com, open:
+
+    Administration
+        Site Configuration
+            Sites
+                Select Primary Site
+                    Properties
+                        Communication Security
+
+For a lab without PKI, enable:
+
+    Use Configuration Manager-generated certificates for HTTP site systems
+
+This is Enhanced HTTP.
+
+For a PKI environment, use HTTPS and valid server authentication certificates.
+
+======================================================================
+PHASE 16 - CREATE THE BRANCH BOUNDARY
+======================================================================
+
+Open:
+
+    Administration
+        Hierarchy Configuration
+            Boundaries
+
+Create:
+
+    Description: SCCM2 Branch Network
+    Type:        IP Address Range
+    Starting IP: 192.168.1.1
+    Ending IP:   192.168.1.254
+
+Create the boundary group:
+
+    Name: BG-SCCM2-Branch
+
+Add:
+
+    SCCM2 Branch Network
+
+On the References tab:
+
+    Use this boundary group for site assignment: Enabled
+    Assigned Site: Parent primary site code, for example PRI
+
+Do not assign clients to S02.
+
+======================================================================
+PHASE 17 - RUN THE SECONDARY SITE PREREQUISITE CHECK
+======================================================================
+Run this on sccm.lab.com.
+Use the installation source that exactly matches the primary site version.
+Recommended path:
+    C:\Program Files\Microsoft Configuration Manager\SMSSETUP\BIN\X64
+Open Command Prompt as Administrator:
+    cd /d "C:\Program Files\Microsoft Configuration Manager\SMSSETUP\BIN\X64"
+
+Run:
+    prereqchk.exe /SEC sccm2.lab.com /INSTALLSQLEXPRESS /Ssbport 4022 /Sqlport 1433
+Here open a window wait for complete check finish. check is there any error arise or not. if any error arise firt fix that. If prerequsit pass than now install secondary site. skip bellow tex of this text if prerequisit pass.
+
+Review:
+    C:\ConfigMgrPrereq.log
+
+Proceed only when:
+
+    Blocking Errors: 0
+    Warnings: Reviewed and understood
+
+Important prerequisite checks include:
+    Domain membership
+    Supported operating system
+    No existing SCCM server role
+    Administrator permissions
+    .NET Framework
+    Remote Differential Compression
+    BITS
+    IIS
+    ODBC Driver 18
+    Active Directory publishing permissions
+    SQL Express installation viability
+    SQL static ports
+    Free disk space
+    SQL Express database size
+
+Important SQL Express limitation:
+    SQL Express has a 10 GB database size limit.
+If the expected secondary site database is too large, install a supported full SQL Server instance locally on sccm2.lab.com instead.
+The secondary site database cannot be installed on a remote SQL server.
+
+======================================================================
+PHASE 18 - CREATE THE SECONDARY SITE
+======================================================================
+On sccm.lab.com, open:
+    Configuration Manager Console
+Navigate to:
+    Administration
+        Site Configuration
+            Sites
+Select the parent primary site.
+Click:
+    Create Secondary Site
+======================================================================
+PHASE 19 - WIZARD SETTINGS
+======================================================================
+GENERAL PAGE
+------------
+Enter:
+    Site Code:           S02
+    Site Server Name:    sccm2.lab.com
+    Site Name:           Branch Secondary Site
+    Installation Folder: D:\Microsoft Configuration Manager
+If no D drive exists:
+    C:\Program Files\Microsoft Configuration Manager
+
+INSTALLATION SOURCE FILES
+-------------------------
+Select:
+    Copy installation source files over the network from the parent site server
+
+SQL SERVER SETTINGS
+-------------------
+Select:
+    Install and configure a local copy of SQL Server Express
+
+Enter:
+    SQL Server Service Port: 1433
+    SQL Server Broker Port:  4022
+Do not reverse these values.
+
+DISTRIBUTION POINT
+------------------
+For Enhanced HTTP:
+    Client Communication: HTTP 				[skip if not exist this come next communication step]
+    Certificate: Create a self-signed certificate	[skip if not exist this come next communication step]
+    Install and configure IIS if required: Enabled
+
+For PKI:
+    Client Communication: HTTPS
+    Certificate: Import the correct PKI certificate
+
+DRIVE SETTINGS
+--------------
+Recommended:
+    Content Library Primary Drive: D: [for lab select automatic]
+    Package Share Primary Drive:   D: [for lab select automatic]
+    Reserved Free Space:           10240 MB
+
+CONTENT VALIDATION [Skip for lab]
+------------------
+Optional for a lab.
+Recommended later:
+    Enable content validation
+    Schedule weekly during off-hours
+
+BOUNDARY GROUPS  skipp now [Skip for lab]
+---------------
+Select:
+    BG-SCCM2-Branch
+
+Verify:
+    Site assignment: Parent primary site code
+    Site-system server: sccm2.lab.com
+
+SUMMARY
+-------
+
+Verify:
+
+    Parent Site Server:   sccm.lab.com
+    Secondary Site:       sccm2.lab.com
+    Secondary Site Code:  S02
+    SQL Port:             1433
+    Broker Port:          4022
+    SQL Type:             SQL Express
+    Boundary Group:       BG-SCCM2-Branch
+
+Click:
+
+    Next
+    Close
+
+The site may initially show:
+
+    Pending
+
+This is normal. wait unitil complite.
+
+======================================================================
+PHASE 20 - MONITOR INSTALLATION
+======================================================================
+
+In the console:
+
+    Administration
+        Site Configuration
+            Sites
+
+Select S02.
+
+Click:
+
+    Show Install Status
+
+Typical installation stages:
+
+    1. Start secondary-site bootstrap service
+    2. Copy and decompress setup files
+    3. Run prerequisite evaluation
+    4. Install SQL Server Express
+    5. Create the secondary-site database
+    6. Register site control data
+    7. Start database replication
+    8. Install Site Component Manager
+    9. Install Management Point
+    10. Install Distribution Point
+    11. Change site state to Active
+
+======================================================================
+PHASE 21 - IMPORTANT LOG FILES
+======================================================================
+
+PRIMARY SITE SERVER LOGS
+------------------------
+
+Default folder:
+
+    C:\Program Files\Microsoft Configuration Manager\Logs
+
+Review:
+
+    hman.log
+        Hierarchy configuration and Active Directory publishing
+
+    ConfigMgrPrereq.log
+        Prerequisite checks
+
+    sender.log
+        File-based site-to-site transfer
+
+    rcmctrl.log
+        Database replication
+
+    sitecomp.log
+        Site component installation
+
+    distmgr.log
+        Distribution point installation
+
+    smstsvc.log
+        Remote service, network, and permission testing
+
+SECONDARY SITE SERVER LOGS
+--------------------------
+
+During setup:
+
+    SMS_BOOTSTRAP.log
+    ConfigMgrSetup.log
+    SiteComp.log
+    MPSetup.log
+    MPMSI.log
+
+After installation, logs are normally located in:
+
+    D:\Microsoft Configuration Manager\Logs
+
+or:
+
+    C:\Program Files\Microsoft Configuration Manager\Logs
+
+Useful postinstallation logs:
+
+    rcmctrl.log
+    sitecomp.log
+    mpcontrol.log
+    distmgr.log
+
+======================================================================
+PHASE 22 - POSTINSTALLATION VERIFICATION
+======================================================================
+
+VERIFY SITE STATE
+-----------------
+
+Open:
+
+    Administration
+        Site Configuration
+            Sites
+
+Expected:
+
+    Site Code: S02
+    Server:    sccm2.lab.com
+    State:     Active
+
+VERIFY SERVICES
+---------------
+
+Run on sccm2.lab.com:
+
+    Get-Service `
+        SMS_EXECUTIVE,
+        SMS_SITE_COMPONENT_MANAGER `
+        -ErrorAction SilentlyContinue |
+        Format-Table Name, Status, StartType
+
+Expected:
+
+    SMS_EXECUTIVE              Running
+    SMS_SITE_COMPONENT_MANAGER Running
+
+Check SQL services:
+
+    Get-Service |
+        Where-Object {
+            $_.Name -Like "MSSQL*" -or
+            $_.Name -Like "SQLAgent*" -or
+            $_.Name -Like "SQLBrowser"
+        } |
+        Format-Table Name, DisplayName, Status, StartType
+
+Do not assume the SQL service name will be SQLEXPRESS.
+
+VERIFY LISTENING PORTS
+----------------------
+
+On sccm2.lab.com:
+
+    Get-NetTCPConnection -State Listen |
+        Where-Object LocalPort -In 80,443,135,445,1433,4022 |
+        Sort-Object LocalPort |
+        Format-Table LocalAddress, LocalPort, OwningProcess
+
+From sccm.lab.com:
+
+    Test-NetConnection sccm2.lab.com -Port 1433
+    Test-NetConnection sccm2.lab.com -Port 4022
+    Test-NetConnection sccm2.lab.com -Port 445
+    Test-NetConnection sccm2.lab.com -Port 135
+
+Expected:
+
+    TcpTestSucceeded: True
+
+======================================================================
+PHASE 23 - VERIFY DATABASE REPLICATION
+======================================================================
+
+Open:
+
+    Monitoring
+        Database Replication
+
+Verify:
+
+    Parent Primary Site <-> S02
+
+Expected:
+
+    Link Status: Active
+    Initialization: Complete
+    Replication Groups: Active
+
+Review:
+
+    rcmctrl.log
+
+If degraded, run:
+
+    Replication Link Analyzer
+
+======================================================================
+PHASE 24 - VERIFY THE MANAGEMENT POINT
+======================================================================
+
+Open:
+
+    Monitoring
+        System Status
+            Site Status
+
+Select:
+
+    sccm2.lab.com
+
+Verify the management point and site system components are healthy.
+
+On SCCM2, review:
+
+    MPSetup.log
+    MPMSI.log
+    mpcontrol.log
+
+======================================================================
+PHASE 25 - VERIFY THE DISTRIBUTION POINT
+======================================================================
+
+Open:
+
+    Administration
+        Distribution Points
+
+Confirm:
+
+    sccm2.lab.com
+
+Distribute a small test package or application.
+
+Open:
+
+    Monitoring
+        Distribution Status
+            Content Status
+            Distribution Point Configuration Status
+
+Expected:
+
+    Success
+
+Review:
+
+    distmgr.log
+    PkgXferMgr.log
+
+======================================================================
+PHASE 26 - COMPLETE BOUNDARY GROUP CONFIGURATION
+======================================================================
+
+Open:
+
+    Administration
+        Hierarchy Configuration
+            Boundary Groups
+                BG-SCCM2-Branch
+                    References
+
+Verify:
+
+    Assigned Site: Parent primary site code, for example PRI
+    Site System Server: sccm2.lab.com
+
+Optional:
+
+Open:
+
+    Administration
+        Site Configuration
+            Sites
+                Hierarchy Settings
+                    General
+
+Enable:
+
+    Clients prefer to use management points specified in boundary groups
+
+======================================================================
+PHASE 27 - TEST WITH A BRANCH CLIENT
+======================================================================
+
+Use a Windows client with an IP address in:
+
+    192.168.1.0/24
+
+Verify:
+
+    ipconfig /all
+    Resolve-DnsName sccm2.lab.com
+    Test-NetConnection sccm2.lab.com -Port 80
+    Test-NetConnection sccm2.lab.com -Port 443
+
+Install the Configuration Manager client with the parent primary site code:
+
+    ccmsetup.exe SMSSITECODE=PRI
+
+Do not use:
+
+    SMSSITECODE=S02
+
+Review client logs:
+
+    C:\Windows\CCM\Logs\LocationServices.log
+    C:\Windows\CCM\Logs\ClientLocation.log
+    C:\Windows\CCM\Logs\ContentTransferManager.log
+    C:\Windows\CCM\Logs\CAS.log
+
+Expected:
+
+    Assigned Site: Parent primary site
+    Local Management Point: sccm2.lab.com
+    Local Distribution Point: sccm2.lab.com
+
+======================================================================
+TROUBLESHOOTING
+======================================================================
+
+ERROR: SITE SERVER COMPUTER ACCOUNT ADMINISTRATIVE RIGHTS
+---------------------------------------------------------
+
+Cause:
+
+    LAB\SCCM$ is not a local administrator on SCCM2.
+
+Fix:
+
+    Add-LocalGroupMember `
+        -Group "Administrators" `
+        -Member 'LAB\SCCM$'
+
+    gpupdate /force
+
+Verify Group Policy does not remove the account.
+
+CANNOT ACCESS ADMIN$
+--------------------
+
+Test from sccm.lab.com:
+
+    Test-NetConnection sccm2.lab.com -Port 445
+    Get-ChildItem "\\sccm2.lab.com\ADMIN$"
+
+Check:
+
+    DNS
+    Routing
+    TCP 445
+    Windows Firewall
+    Network Firewall
+    File and Printer Sharing
+    Local administrator permissions
+
+RDC PREREQUISITE ERROR
+----------------------
+
+Fix:
+
+    Install-WindowsFeature RDC
+    Restart-Computer
+
+BITS OR IIS WARNING
+-------------------
+
+Fix:
+
+    Install-WindowsFeature `
+        BITS,
+        BITS-IIS-Ext,
+        Web-Server,
+        Web-ISAPI-Ext,
+        Web-Windows-Auth,
+        Web-Metabase,
+        Web-WMI `
+        -IncludeManagementTools
+
+Restart IIS:
+
+    iisreset
+
+ACTIVE DIRECTORY PUBLISHING WARNING
+-----------------------------------
+
+Verify:
+
+    LAB\SCCM$
+    LAB\SCCM2$
+
+Permission:
+
+    Full Control
+
+Scope:
+
+    This object and all descendant objects
+
+Review:
+
+    hman.log
+
+SQL SERVER EXPRESS INSTALLATION FAILURE
+---------------------------------------
+
+Review:
+
+    ConfigMgrSetup.log
+
+SQL Setup logs:
+
+    C:\Program Files\Microsoft SQL Server\<version>\Setup Bootstrap\Log
+
+Common causes:
+
+    Pending restart
+    Existing or damaged SQL instance
+    Missing .NET Framework
+    Missing ODBC Driver 18
+    Unsupported Windows Server version
+    Insufficient disk space
+    Antivirus interference
+    Previous incomplete installation
+    Permission problems
+
+Correct the issue and use Retry Installation from the console.
+
+SQL PORTS UNREACHABLE
+---------------------
+
+Check listening ports:
+
+    Get-NetTCPConnection -State Listen |
+        Where-Object LocalPort -In 1433,4022
+
+Test:
+
+    Test-NetConnection sccm.lab.com -Port 1433
+    Test-NetConnection sccm.lab.com -Port 4022
+    Test-NetConnection sccm2.lab.com -Port 1433
+    Test-NetConnection sccm2.lab.com -Port 4022
+
+Verify:
+
+    SQL TCP/IP enabled
+    Static SQL port configured
+    Firewall rules
+    Correct SQL host
+    Routing
+    No duplicate process using the port
+
+COLLATION ERROR
+---------------
+
+Required Configuration Manager SQL collation:
+
+    SQL_Latin1_General_CP1_CI_AS
+
+Check the parent SQL server:
+
+    SELECT SERVERPROPERTY('Collation') AS ServerCollation;
+
+Expected:
+
+    SQL_Latin1_General_CP1_CI_AS
+
+SITE REMAINS PENDING
+--------------------
+
+Review on SCCM2:
+
+    SMS_BOOTSTRAP.log
+    ConfigMgrSetup.log
+    SiteComp.log
+
+Review on SCCM primary:
+
+    hman.log
+    sender.log
+    smstsvc.log
+    rcmctrl.log
+    sitecomp.log
+
+Test:
+
+    Test-NetConnection sccm2.lab.com -Port 445
+    Test-NetConnection sccm2.lab.com -Port 135
+    Test-NetConnection sccm2.lab.com -Port 1433
+    Test-NetConnection sccm2.lab.com -Port 4022
+
+Do not manually delete the site or remove SQL while setup is actively running.
+
+Correct the problem and use Retry Installation.
+
+======================================================================
+FINAL GO-LIVE CHECKLIST
+======================================================================
+
+INFRASTRUCTURE
+--------------
+
+[ ] sccm2.lab.com resolves to 192.168.1.140
+[ ] sccm.lab.com resolves to 10.10.10.120
+[ ] Routing works in both directions
+[ ] SCCM2 uses 10.10.10.110 for DNS
+[ ] SCCM2 is joined to lab.com
+[ ] Test-ComputerSecureChannel returns True
+[ ] Time synchronization is healthy
+
+PERMISSIONS
+-----------
+
+[ ] LAB\SCCM$ is local Administrator on SCCM2
+[ ] LAB\SCCM$ has Full Control on System Management
+[ ] LAB\SCCM2$ has Full Control on System Management
+[ ] Permissions apply to all descendant objects
+
+PREREQUISITES
+-------------
+
+[ ] .NET Framework 3.5 installed
+[ ] .NET Framework 4.8 installed
+[ ] Remote Differential Compression installed
+[ ] BITS installed
+[ ] IIS installed
+[ ] IIS 6 Metabase Compatibility installed
+[ ] IIS 6 WMI Compatibility installed
+[ ] Windows Authentication installed
+[ ] ODBC Driver 18 installed
+[ ] Remote Registry running during installation
+[ ] At least 15 GB free space
+[ ] Recommended 40 GB or more free space
+
+NETWORK
+-------
+
+[ ] TCP 445 open
+[ ] TCP 135 open
+[ ] TCP 49152-65535 open
+[ ] TCP 1433 open
+[ ] TCP 4022 open
+[ ] TCP 80 or 443 available for branch clients
+
+INSTALLATION
+------------
+
+[ ] Prerequisite check has zero blocking errors
+[ ] Site code S02 is unique
+[ ] Source copied from parent site
+[ ] SQL Express selected
+[ ] SQL port configured as 1433
+[ ] Broker port configured as 4022
+[ ] Boundary group selected
+[ ] Secondary site status is Active
+
+POSTINSTALLATION
+----------------
+
+[ ] Database replication is Active
+[ ] Management point is healthy
+[ ] Distribution point is healthy
+[ ] Test content distribution succeeds
+[ ] Branch client remains assigned to parent primary site
+[ ] Branch client selects SCCM2 as local management point
+[ ] Branch client selects SCCM2 as local distribution point
+
+======================================================================
+REFERENCE SOURCES
+======================================================================
+
+Microsoft Configuration Manager Documentation:
+    https://learn.microsoft.com/en-us/intune/configmgr/
+
+Secondary Site Setup Wizard:
+    https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/install/setup-wizard-secondary
+
+Configuration Manager Prerequisite Checks:
+    https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/install/list-of-prerequisite-checks
+
+Configuration Manager Ports:
+    https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/hierarchy/ports
+
+Site and Site System Prerequisites:
+    https://learn.microsoft.com/en-us/intune/configmgr/core/plan-design/configs/site-and-site-system-prerequisites
+
+Prajwal Desai - Secondary Site Prerequisite Check:
+    https://www.prajwaldesai.com/configmgr-secondary-site-prerequisite-check/
+
+Prajwal Desai - SCCM Secondary Site Installation:
+    https://www.prajwaldesai.com/sccm-secondary-site-installation/
+
+======================================================================
+END OF DOCUMENT
+======================================================================
