@@ -13,11 +13,16 @@ or
 #Insall SCCM Client Manually in a non-domain PC:
 	1. net use \\sccm.lab.com\SMS_S01\Client /user:LAB\Administrator *
 		#provide  password for the mentioned [Administrator] admin user
-	2. \\sccm.lab.com\SMS_S01\Client\ccmsetup.exe SMSSITECODE=S01 SMSMP=sccm.lab.com
-
+	1.1. \\sccm.lab.com\SMS_S01\Client\ccmsetup.exe SMSSITECODE=S01 SMSMP=sccm.lab.com
 or
 \\sccm.lab.com\SMS_S01\Client\ccmsetup.exe SMSSITECODE=S01 SMSMP=sccm.lab.com /logon
 	#First login as an admin user. 
+
+	2. Wait some time then check hostname in sccm device. Than aprove that device.
+	3. Check BTS, SMS Agent Host, WMI servies in host machine. Restart them in Client machine.
+	4. Run Application Deployment Evaluation Cycle, Machine Policy Retrieval & Evaluation Cycle from Configuration Manager Action.
+	5. Allow SCCM-related port in the firewall. Run the SccmAddFirewallPort.ps1 script on the client machine.
+	
 
 Monitor Installation Progress
 	1. C:\Windows\ccmsetup\Logs\ccmsetup.log
