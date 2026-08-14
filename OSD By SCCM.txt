@@ -76,7 +76,7 @@ User must get dns (10.10.10.110) by dhcp. and geting ping dc01.
 		*complete the process.
 	3.2. make a reference pc in hyper-v and install all need software. than mount boot capture boot image (dont use from refarence pc hdd location). mount as like window instalation iso
 	3.3. double click on mounted iso or opent iso. then click lounch. (here you will get lot of error.) follow to fix them.
-	3.3.1. 1st error form lounch window. 0x000000B7. cause Sysprep failing because Store/Appx packages. remove all sotre app. roun script as powershell admin
+	3.3.1. 1st error form lounch window. 0x000000B7, 0x000002E4. cause Sysprep failing because Store/Appx packages. remove all sotre app. roun script as powershell admin
 #Decrypt C encryption. First check encryption on not. if showing 100% than decypte.
 manage-bde -status C:
 manage-bde -off C:
@@ -97,6 +97,8 @@ ForEach-Object {
     }
 }
 
+#you would see some failed don't warry for that.
+
 3.3.1. *delete log from sysprep. 2 log file file in window>system32>sysprep.
 	* stop process
 taskkill /f /im TsmBootstrap.exe
@@ -115,7 +117,7 @@ icacls C:\_SmsTsWinPE /grant Administrators:F /t
 attrib -r -h -s C:\_SmsTsWinPE /s /d
 rd /s /q C:\_SmsTsWinPE
 
-#than reboot. pc and run capture iso agin.
+#than reboot. pc and run capture iso agin. You must restart your pc. otherwise you will get that error agin.
 
 	3.3.1. 2nd error "Unable to read task sequence configuration" after run sysprep and reboot pc.
 * this issu occours if you mount capture iso form hdd of reference pc. so use captue iso like windows installtion. hyperv: machine setting>cd/dvd>add iso.
