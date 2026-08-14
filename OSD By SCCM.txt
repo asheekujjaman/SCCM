@@ -118,7 +118,7 @@ attrib -r -h -s C:\_SmsTsWinPE /s /d
 rd /s /q C:\_SmsTsWinPE
 
 #than reboot. pc and run capture iso agin. You must restart your pc. otherwise you will get that error agin.
-
+#After reboot open pc by builtin administator account, open capture iso. run louncher with administrator.
 	3.3.1. 2nd error "Unable to read task sequence configuration" after run sysprep and reboot pc.
 * this issu occours if you mount capture iso form hdd of reference pc. so use captue iso like windows installtion. hyperv: machine setting>cd/dvd>add iso.
 *windows drive "c" not mount automatic after reboot. (if use wmware you face this). so you hyper-v. dont try make install.wim like this.
