@@ -99,7 +99,7 @@ ForEach-Object {
 
 #you would see some failed don't warry for that.
 
-3.3.1. *delete log from sysprep. 2 log file file in window>system32>sysprep.
+3.3.1. *delete log from sysprep. 2 log file file in window>system32>sysprep. (setupact.log, setuperr.log)
 	* stop process
 taskkill /f /im TsmBootstrap.exe
 taskkill /f /im TSProgressUI.exe
