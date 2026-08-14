@@ -67,7 +67,7 @@ User must get dns (10.10.10.110) by dhcp. and geting ping dc01.
 	4. it will work.
 
 
-#3. Need install.wim file [make install.wim fie form reference pc]
+#3. Need install.wim file [make install.wim fie form reference pc]. Use Windows builtin Administrator account
 	3.1. create a capture iso.
 		*Software Library>Operating System>Task Sequances media
 		*Select capture media
@@ -77,6 +77,11 @@ User must get dns (10.10.10.110) by dhcp. and geting ping dc01.
 	3.2. make a reference pc in hyper-v and install all need software. than mount boot capture boot image (dont use from refarence pc hdd location). mount as like window instalation iso
 	3.3. double click on mounted iso or opent iso. then click lounch. (here you will get lot of error.) follow to fix them.
 	3.3.1. 1st error form lounch window. 0x000000B7. cause Sysprep failing because Store/Appx packages. remove all sotre app. roun script as powershell admin
+#Decrypt C encryption. First check encryption on not. if showing 100% than decypte.
+manage-bde -status C:
+manage-bde -off C:
+manage-bde -status C:
+
 # Remove AppX packages for all existing users
 Get-AppxPackage -AllUsers |
 Where-Object {
@@ -91,7 +96,6 @@ ForEach-Object {
         Write-Warning "Failed: $($_.Name)"
     }
 }
-
 
 3.3.1. *delete log from sysprep. 2 log file file in window>system32>sysprep.
 	* stop process
