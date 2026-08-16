@@ -77,6 +77,9 @@ User must get dns (10.10.10.110) by dhcp. and geting ping dc01.
 	3.2. make a reference pc in hyper-v and install all need software. than mount boot capture boot image (dont use from refarence pc hdd location). mount as like window instalation iso
 	3.3. double click on mounted iso or opent iso. then click lounch. (here you will get lot of error.) follow to fix them.
 	3.3.1. 1st error form lounch window. 0x000000B7, 0x000002E4. cause Sysprep failing because Store/Appx packages. remove all sotre app. roun script as powershell admin
+
+#Connect internet and check any update available or not. if update available. you must update first. otherwise you get.  0x00000404 type error.
+
 #Decrypt C encryption. First check encryption on not. if showing 100% than decypte.
 manage-bde -status C:
 manage-bde -off C:
